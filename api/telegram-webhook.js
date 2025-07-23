@@ -186,10 +186,13 @@ function generateQuickChartUrl(labels, data, type, title, yAxisLabel, borderColo
 
 
 export default async (req, res) => {
+    console.log('Received request:', req.method, req.url);
     if (req.method === 'POST') {
+        console.log('Request body:', JSON.stringify(req.body, null, 2)); // Log the full request body
         const { message } = req.body;
 
         if (!message) {
+            console.log('No message object in request body.');
             return res.status(200).send('No message received');
         }
 
@@ -197,7 +200,7 @@ export default async (req, res) => {
         const text = message.text || '';
         const fromId = message.from.id; // Telegram user ID
 
-        console.log(`Received message from ${fromId} in chat ${chatId}: ${text}`);
+        console.log(`Processing message from Telegram ID: ${fromId}, Chat ID: ${chatId}, Text: "${text}"`);
 
         let userId = await getUserIdByTelegramId(fromId);
 
