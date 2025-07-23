@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salary Tracker</title>
+    <!-- External stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Tektur:wght@400..900&display=swap"
+        rel="stylesheet">
+    <!-- Chart.js library for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lottie animation library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+
+    <!-- SVG Definitions -->
+    <!-- SVG Definitions for icons -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <!-- Up arrow icon for positive changes -->
+        <symbol id="arrow-up" viewBox="0 0 24 24">
+            <polyline points="1.5 18.68 9.14 11.04 12.96 14.86 22.5 5.32" fill="none" stroke="currentColor"
+                stroke-miterlimit="10" stroke-width="1.91" />
+            <polyline points="17.73 5.32 22.5 5.32 22.5 10.09" fill="none" stroke="currentColor" stroke-miterlimit="10"
+                stroke-width="1.91" />
+        </symbol>
+        <!-- Down arrow icon for negative changes -->
+        <symbol id="arrow-down" viewBox="0 0 24 24">
+            <polyline points="1.5 5.32 9.14 12.96 12.96 9.14 22.5 18.68" fill="none" stroke="currentColor"
+                stroke-miterlimit="10" stroke-width="1.91" />
+            <polyline points="17.73 18.68 22.5 18.68 22.5 13.91" fill="none" stroke="currentColor"
+                stroke-miterlimit="10" stroke-width="1.91" />
+        </symbol>
+    </svg>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Page header with title and theme switcher -->
+        <header>
+            <h1>Salary Tracker</h1>
+            <!-- Dark/Light theme toggle switch -->
+            <div class="theme-switcher">
+                <span class="theme-label">🌙</span>
+                <label class="switch">
+                    <input type="checkbox" id="themeToggle">
+                    <span class="slider"></span>
+                </label>
+                <span class="theme-label">☀️</span>
+            </div>
+        </header>
+
+        <!-- General Analytics Section -->
+        <!-- General Analytics Section - Shows overall income statistics -->
+        <section class="analytics-section">
+            <div class="section-header">
+                <h2>General Analytics</h2>
+                <!-- Settings button with animated gear icon -->
+                <div class="settings-gear" id="analyticsSettingsBtn">
+                    <div id="gearAnimation"></div>
+                </div>
+            </div>
+            <!-- Analytics cards displaying key metrics -->
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <div class="card-label">Total Income</div>
+                    <div class="card-value" id="totalIncome">54944.88 UAH</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="card-label">Total Hours</div>
+                    <div class="card-value" id="totalHours">864.00</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="card-label">Average Rate</div>
+                    <div class="card-value" id="averageRate">63.59 UAH/hour</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Monthly Income Chart Section -->
+        <!-- Monthly Income Chart Section - Visual representation of income data -->
+        <section class="chart-section">
+            <div class="section-header">
+                <div class="chart-title-container">
+                    <h2>Monthly Income</h2>
+                </div>
+                <!-- Settings button for chart customization -->
+                <div class="settings-gear" id="monthlyIncomeSettingsBtn">
+                    <div id="gearAnimation"></div>
+                </div>
+            </div>
+            <!-- Canvas for Chart.js to render the salary chart -->
+            <canvas id="salaryChart"></canvas>
+        </section>
+
+        <!-- Data Entry Section -->
+        <!-- Data Entry Section - Split into two columns -->
+        <section class="data-section">
+            <!-- Left column - Form for adding new salary entries -->
+            <div class="left-section">
+                <div class="add-salary-section">
+                    <h2>Add Salary Data</h2>
+                    <form id="salaryForm">
+                        <div class="form-group">
+                            <label for="jobSelect">Job:</label>
+                            <select id="jobSelect" required>
+                                <!-- Jobs will be populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="monthYearInput">Month and Year:</label>
+                            <input type="month" id="monthYearInput" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="salary">Salary (UAH):</label>
+                            <input type="number" id="salary" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="hours">Hours Worked:</label>
+                            <input type="number" id="hours" step="0.1" required value="96">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit">Add Entry</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Visual divider between columns -->
+            <div class="divider"></div>
+
+            <!-- Right column - Statistics display -->
+            <div class="right-section">
+                <div class="statistics-section">
+                    <div class="statistics-header">
+                        <h2>Statistics</h2>
+                        <!-- Dropdown to select which job's data to view -->
+                        <div class="job-selector">
+                            <label for="viewJobSelect">View Job Data:</label>
+                            <select id="viewJobSelect">
+                                <!-- Jobs will be populated dynamically -->
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Display of the most recent salary entry -->
+                    <div class="current-entry">
+                        <h3>Last Entry</h3>
+                        <div class="stat-item">
+                            <span class="label">Salary:</span>
+                            <span id="currentSalary" class="tooltip-trigger">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Hours:</span>
+                            <span id="currentHours">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Hourly Rate:</span>
+                            <span id="currentHourlyRate" class="tooltip-trigger">-</span>
+                            <span class="label" style="margin-left: 15px;">Difference:</span>
+                            <span id="currentDifference" class="tooltip-trigger">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Salary History Section -->
+        <!-- Salary History Section - Tabular display of all salary entries -->
+        <section class="history-section">
+            <h2>Salary History</h2>
+            <div class="table-container">
+                <table id="salaryHistoryTable">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Job</th>
+                            <th>Salary (UAH)</th>
+                            <th>Hours</th>
+                            <th>Hourly Rate</th>
+                            <th>Salary Diff</th>
+                            <th>Rate Diff</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Salary history will be populated dynamically -->
+                        <td class="button-group">
+                            <button class="edit-btn">Edit</button>
+                            <button class="delete-btn">Delete</button>
+                        </td>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Button to clear all stored data -->
+            <button id="clearAllData" class="danger-button">Clear All Data</button>
+        </section>
+
+        <!-- Tooltip element for displaying additional information on hover -->
+        <div class="tooltip" id="tooltip"></div>
+
+        <!-- Job Settings Button -->
+        <!-- Job Settings Button - Opens job management modal -->
+        <div class="settings-container">
+            <button id="jobSettingsBtn" class="settings-button">Job Settings</button>
+        </div>
+    </div>
+
+    <!-- Job Settings Modal -->
+    <!-- Job Settings Modal - For managing job profiles -->
+    <div id="jobSettingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Job Settings</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <!-- List of existing jobs -->
+                <div class="jobs-list">
+                    <h3>Your Jobs</h3>
+                    <div id="jobsList">
+                        <!-- Jobs will be populated dynamically -->
+                    </div>
+                </div>
+                <!-- Form to add a new job -->
+                <div class="add-job-form">
+                    <h3>Add New Job</h3>
+                    <form id="addJobForm">
+                        <div class="form-group">
+                            <label for="newJobName">Job Name:</label>
+                            <input type="text" id="newJobName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newJobBaseRate">Base Rate (UAH):</label>
+                            <input type="number" id="newJobBaseRate" step="0.01" value="10395" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newJobBaseHours">Base Hours:</label>
+                            <input type="number" id="newJobBaseHours" step="0.1" value="192" required>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit">Add Job</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Job Modal -->
+    <!-- Edit Job Modal - For modifying existing job details -->
+    <div id="editJobModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Job</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editJobForm">
+                    <input type="hidden" id="editJobId">
+                    <div class="form-group">
+                        <label for="editJobName">Job Name:</label>
+                        <input type="text" id="editJobName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editJobBaseRate">Base Rate (UAH):</label>
+                        <input type="number" id="editJobBaseRate" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editJobBaseHours">Base Hours:</label>
+                        <input type="number" id="editJobBaseHours" step="0.1" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Income Settings Modal -->
+    <!-- Monthly Income Settings Modal - For chart customization -->
+    <div id="monthlyIncomeSettingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Monthly Income Settings</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h3>Chart Controls</h3>
+                    <!-- Time period selector for chart -->
+                    <div class="chart-control-group">
+                        <span class="control-label">Period:</span>
+                        <div class="control-options">
+                            <select id="periodSelect">
+                                <option value="all">All Time</option>
+                                <option value="year">This Year</option>
+                                <option value="6months">Last 6 Months</option>
+                                <option value="3months">Last 3 Months</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Chart data type selection (salary vs hourly rate) -->
+                    <div class="chart-control-group">
+                        <span class="control-label">Data Type:</span>
+                        <div class="control-options">
+                            <label>
+                                <input type="radio" name="chartType" value="salary" checked> Monthly Salary
+                            </label>
+                            <label>
+                                <input type="radio" name="chartType" value="hourlyRate"> Hourly Rate
+                            </label>
+                        </div>
+                    </div>
+                    <!-- Chart view selection (overall vs specific job) -->
+                    <div class="chart-control-group">
+                        <span class="control-label">Chart View:</span>
+                        <div class="control-options">
+                            <select id="chartViewSelect">
+                                <option value="overall">Overall</option>
+                                <!-- Job options will be added dynamically -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <!-- Action buttons for chart settings -->
+                <div class="modal-actions">
+                    <button type="button" id="resetMonthlyIncomeSettings" class="secondary-btn">Reset to
+                        Default</button>
+                    <button type="button" id="applyMonthlyIncomeSettings" class="primary-btn">Apply Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Settings Modal -->
+    <!-- Analytics Settings Modal - For customizing analytics display -->
+    <div id="analyticsSettingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Analytics Settings</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <!-- Time Period Section -->
+                <!-- Time Period Section - Filter analytics by date range -->
+                <div class="settings-section">
+                    <h3>Time Period</h3>
+                    <div class="form-group">
+                        <label for="analyticsPeriodSelect">Select Period:</label>
+                        <select id="analyticsPeriodSelect">
+                            <option value="3months">Last 3 Months</option>
+                            <option value="6months">Last 6 Months</option>
+                            <option value="year">This Year</option>
+                            <option value="all" selected>All Time</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    <!-- Custom date range selector (hidden by default) -->
+                    <div id="customDateRange" class="form-group" style="display: none;">
+                        <div class="date-range-container">
+                            <div class="date-input">
+                                <label for="customStartDate">From:</label>
+                                <input type="month" id="customStartDate">
+                            </div>
+                            <div class="date-input">
+                                <label for="customEndDate">To:</label>
+                                <input type="month" id="customEndDate">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Job Selection Section -->
+                <!-- Job Selection Section - Filter analytics by job -->
+                <div class="settings-section">
+                    <h3>Job Selection</h3>
+                    <div class="form-group">
+                        <div class="job-selection-controls">
+                            <button type="button" id="selectAllJobs" class="selection-btn">Select All</button>
+                            <button type="button" id="deselectAllJobs" class="selection-btn">Deselect All</button>
+                        </div>
+                        <div id="analyticsJobsContainer" class="checkbox-group">
+                            <!-- Jobs checkboxes will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Action Buttons -->
+                <!-- Action Buttons for analytics settings -->
+                <div class="modal-actions">
+                    <button type="button" id="resetAnalyticsSettings" class="secondary-btn">Reset to Default</button>
+                    <button type="button" id="applyAnalyticsSettings" class="primary-btn">Apply Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Entry Modal -->
+    <!-- Edit Entry Modal - For modifying existing salary entries -->
+    <div id="editEntryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Salary Entry</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editEntryForm">
+                    <input type="hidden" id="editEntryId">
+                    <div class="form-group">
+                        <label for="editEntryJob">Job:</label>
+                        <span id="editEntryJob" class="form-text-display"></span>
+                        <input type="hidden" id="editEntryJobHidden">
+                    </div>
+                    <div class="form-group">
+                        <label for="editEntryMonthYear">Month and Year:</label>
+                        <input type="month" id="editEntryMonthYear" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editEntrySalary">Salary (UAH):</label>
+                        <input type="number" id="editEntrySalary" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editEntryHours">Hours Worked:</label>
+                        <input type="number" id="editEntryHours" step="0.1" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer with base rate information -->
+    <footer>
+        <div class="base-info">
+            <div>Base Rates Information</div>
+            <div class="base-rates-container" id="baseRatesContainer">
+                <!-- Base rates will be populated dynamically -->
+            </div>
+        </div>
+    </footer>
+
+    <!-- Main JavaScript file -->
+    <script src="script.js"></script>
+</body>
+
+</html>
