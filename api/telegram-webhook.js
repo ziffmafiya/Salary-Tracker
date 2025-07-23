@@ -7,7 +7,21 @@ const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
 const vercelUrl = process.env.VERCEL_URL; // For setting webhook
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+console.log('Vercel Environment Variables:');
+console.log('SUPABASE_URL:', supabaseUrl ? 'Set' : 'Not Set');
+console.log('SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Set' : 'Not Set');
+console.log('TELEGRAM_BOT_TOKEN:', telegramBotToken ? 'Set' : 'Not Set');
+console.log('VERCEL_URL:', vercelUrl ? 'Set' : 'Not Set');
+
+let supabase;
+try {
+    supabase = createClient(supabaseUrl, supabaseAnonKey);
+    console.log('Supabase client initialized successfully.');
+} catch (e) {
+    console.error('Error initializing Supabase client:', e.message);
+    // It's crucial to return an error response if Supabase fails to initialize
+    // This part will be handled in the main export function for actual requests
+}
 
 // Telegram API endpoint
 const TELEGRAM_API = `https://api.telegram.org/bot${telegramBotToken}`;
@@ -480,8 +494,11 @@ export default async (req, res) => {
     } else if (req.method === 'GET') {
         // For Vercel, you might want to set the webhook here on GET request
         // This is a simplified example. In production, you'd set it once.
-        const webhookUrl = `${vercelUrl}/api/telegram-webhook`;
+        // Ensure webhookUrl always starts with https://
+        const webhookUrl = `https://${vercelUrl}/api/telegram-webhook`;
         const setWebhookUrl = `${TELEGRAM_API}/setWebhook?url=${webhookUrl}`;
+
+        console.log(`Attempting to set webhook to: ${webhookUrl}`);
 
         try {
             const response = await fetch(setWebhookUrl);
@@ -489,6 +506,7 @@ export default async (req, res) => {
             if (data.ok) {
                 res.status(200).send(`Webhook set to ${webhookUrl}: ${data.description}`);
             } else {
+                console.error('Failed to set webhook response:', data);
                 res.status(500).send(`Failed to set webhook: ${data.description}`);
             }
         } catch (error) {
