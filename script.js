@@ -1,5 +1,7 @@
 class SalaryTracker {
-    constructor() {
+    constructor(supabaseClient) {
+        this.supabase = supabaseClient;
+        this.user = null;
         this.currentJobId = null;
         this.currentPeriod = 'all';
         this.currentChartView = 'overall';
@@ -20,36 +22,31 @@ class SalaryTracker {
         this.init();
     }
 
-    // Load data from localStorage
-    loadData() {
-        const storedJobs = localStorage.getItem('salaryTrackerJobs');
-        const storedEntries = localStorage.getItem('salaryTrackerEntries');
-        const storedAnalyticsSettings = localStorage.getItem('salaryTrackerAnalyticsSettings');
+    // Load data from Supabase
+    async loadData() {
+        const { data: jobs, error: jobsError } = await this.supabase.from('jobs').select('*');
+        if (jobsError) {
+            console.error('Error loading jobs:', jobsError);
+        } else {
+            this.jobs = jobs;
+        }
 
-        if (storedJobs) {
-            this.jobs = JSON.parse(storedJobs);
+        const { data: entries, error: entriesError } = await this.supabase.from('entries').select('*');
+        if (entriesError) {
+            console.error('Error loading entries:', entriesError);
+        } else {
+            // Map job_id to jobId for consistency with existing code
+            this.entries = entries.map(entry => ({
+                ...entry,
+                jobId: entry.job_id // Create jobId property from job_id
+            }));
         }
-        if (storedEntries) {
-            this.entries = JSON.parse(storedEntries);
-        }
+
+        // For simplicity, we'll keep analytics settings in localStorage for now
+        const storedAnalyticsSettings = localStorage.getItem('salaryTrackerAnalyticsSettings');
         if (storedAnalyticsSettings) {
             this.analyticsSettings = JSON.parse(storedAnalyticsSettings);
         }
-
-        // Migrate old data format if it exists
-        this.migrateOldData();
-    }
-
-    // Save data to localStorage
-    saveData() {
-        localStorage.setItem('salaryTrackerJobs', JSON.stringify(this.jobs));
-        localStorage.setItem('salaryTrackerEntries', JSON.stringify(this.entries));
-        localStorage.setItem('salaryTrackerAnalyticsSettings', JSON.stringify(this.analyticsSettings));
-    }
-
-    // Generate a unique ID
-    generateId() {
-        return '_' + Math.random().toString(36).substr(2, 9);
     }
 
     // Setup tooltips
@@ -103,21 +100,29 @@ class SalaryTracker {
         });
     }
 
-    init() {
-        this.loadData();
-        this.setupDefaultJobs();
+    async init() {
+        const { data: { user } } = await this.supabase.auth.getUser();
+        this.user = user;
+
+        await this.loadData(); // Загружает работы и настройки аналитики из localStorage
+        await this.migrateOldData(); // Миграция данных, если необходимо
+
+        // Убедитесь, что analyticsSettings.includedJobs всегда содержит все текущие идентификаторы работ при загрузке страницы.
+        // Это переопределяет любой ранее сохраненный поднабор работ для настройки 'includedJobs',
+        // выполняя запрос пользователя о том, чтобы все работы всегда были выбраны по умолчанию.
+        if (this.jobs.length > 0) {
+            this.analyticsSettings.includedJobs = this.jobs.map(job => job.id);
+        } else {
+            this.analyticsSettings.includedJobs = []; // Если нет работ, то нет включенных работ
+        }
+
         this.setupEventListeners();
         this.setupThemeToggle();
         this.populateJobSelects();
         this.populateChartViewSelect();
         this.setupChart();
-        this.updateSalaryHistory();
-
-        // Initialize analytics settings to include all jobs by default
-        if (this.jobs.length > 0 && this.analyticsSettings.includedJobs.length === 0) {
-            this.analyticsSettings.includedJobs = this.jobs.map(job => job.id);
-        }
-
+        
+        this.updateSalaryHistory(); // Вызывается после инициализации analyticsSettings.includedJobs
         this.updateGeneralAnalytics();
         this.updateBaseRatesInfo();
 
@@ -127,59 +132,10 @@ class SalaryTracker {
             this.updateStatistics();
         }
     }
-    setupDefaultJobs() {
-        // If no jobs exist, create default ones
-        if (this.jobs.length === 0) {
-            const mainJobId = this.generateId();
-
-            this.jobs = [
-                {
-                    id: mainJobId,
-                    name: 'Main Job',
-                    baseRate: 10395,
-                    baseHours: 192
-                },
-                {
-                    id: this.generateId(),
-                    name: 'Second Job',
-                    baseRate: 10395,
-                    baseHours: 192
-                },
-                {
-                    id: this.generateId(),
-                    name: 'Side Jobs',
-                    baseRate: 10395,
-                    baseHours: 192
-                }
-            ];
-
-            // Add known salary data for Main Job
-            const salaryData = [
-                { month: '2024-10', salary: 5108.11, hours: 96 },
-                { month: '2024-11', salary: 6246.24, hours: 96 },
-                { month: '2024-12', salary: 6578.10, hours: 96 },
-                { month: '2025-01', salary: 6290.21, hours: 96 },
-                { month: '2025-02', salary: 6024.42, hours: 96 },
-                { month: '2025-03', salary: 5791.10, hours: 96 },
-                { month: '2025-04', salary: 5447.98, hours: 96 },
-                { month: '2025-05', salary: 6562.94, hours: 96 },
-                { month: '2025-06', salary: 6895.78, hours: 96 }
-            ];
-
-            // Add entries for Main Job
-            salaryData.forEach(data => {
-                this.entries.push({
-                    id: this.generateId(),
-                    jobId: mainJobId,
-                    month: data.month,
-                    salary: data.salary,
-                    hours: data.hours
-                });
-            });
-
-            this.saveData();
-        }
-    }
+    
+    // This function is no longer needed as we won't be creating default jobs.
+    // Users will add their own jobs.
+    // setupDefaultJobs() { ... }
     // Setup theme toggle functionality
     setupThemeToggle() {
         const themeToggle = document.getElementById('themeToggle');
@@ -333,14 +289,18 @@ class SalaryTracker {
         });
 
         // Clear all data button
-        document.getElementById('clearAllData').addEventListener('click', () => {
+        document.getElementById('clearAllData').addEventListener('click', async () => {
             if (confirm('Are you sure you want to delete all salary data? This action cannot be undone.')) {
-                this.entries = [];
-                this.saveData();
-                this.updateSalaryHistory();
-                this.updateGeneralAnalytics();
-                this.updateChart();
-                this.updateStatistics();
+                const { error } = await this.supabase.from('entries').delete().neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+                if (error) {
+                    console.error('Error clearing entries:', error);
+                } else {
+                    this.entries = [];
+                    this.updateSalaryHistory();
+                    this.updateGeneralAnalytics();
+                    this.updateChart();
+                    this.updateStatistics();
+                }
             }
         });
 
@@ -511,154 +471,154 @@ class SalaryTracker {
         document.getElementById('editJobModal').style.display = 'block';
     }
 
-    saveJobEdit() {
+    async saveJobEdit() {
         const jobId = document.getElementById('editJobId').value;
         const jobName = document.getElementById('editJobName').value;
         const baseRate = parseFloat(document.getElementById('editJobBaseRate').value);
         const baseHours = parseFloat(document.getElementById('editJobBaseHours').value);
 
-        const jobIndex = this.jobs.findIndex(job => job.id === jobId);
-        if (jobIndex !== -1) {
-            this.jobs[jobIndex].name = jobName;
-            this.jobs[jobIndex].baseRate = baseRate;
-            this.jobs[jobIndex].baseHours = baseHours;
+        const { data, error } = await this.supabase
+            .from('jobs')
+            .update({ name: jobName, base_rate: baseRate, base_hours: baseHours })
+            .eq('id', jobId)
+            .select();
 
-            this.saveData();
+        if (error) {
+            console.error('Error updating job:', error);
+        } else {
+            const jobIndex = this.jobs.findIndex(job => job.id === jobId);
+            if (jobIndex !== -1) {
+                this.jobs[jobIndex] = data[0];
+            }
             this.populateJobSelects();
             this.populateChartViewSelect();
             this.populateJobsList();
             this.updateStatistics();
             this.updateSalaryHistory();
             this.updateBaseRatesInfo();
-
-            // If this job is the current chart view, update the button text in the modal
-            if (this.currentChartView === jobId) {
-                document.getElementById('monthlyIncomeSettingsModal').querySelector('#chartViewBtn').textContent = jobName + ' ▼';
-            }
-
             document.getElementById('editJobModal').style.display = 'none';
         }
     }
 
-    addNewJob() {
+    async addNewJob() {
         const jobName = document.getElementById('newJobName').value;
         const baseRate = parseFloat(document.getElementById('newJobBaseRate').value);
         const baseHours = parseFloat(document.getElementById('newJobBaseHours').value);
 
-        const newJob = {
-            id: this.generateId(),
-            name: jobName,
-            baseRate: baseRate,
-            baseHours: baseHours
-        };
+        const { data, error } = await this.supabase
+            .from('jobs')
+            .insert([{ name: jobName, base_rate: baseRate, base_hours: baseHours, user_id: this.user.id }])
+            .select();
 
-        this.jobs.push(newJob);
-        this.saveData();
-
-        // Reset form
-        document.getElementById('newJobName').value = '';
-        document.getElementById('newJobBaseRate').value = '10395';
-        document.getElementById('newJobBaseHours').value = '192';
-
-        // Update UI
-        this.populateJobSelects();
-        this.populateChartViewSelect();
-        this.populateJobsList();
-        this.updateBaseRatesInfo();
-
-        // If this is the first job, set it as current
-        if (this.jobs.length === 1) {
-            this.currentJobId = newJob.id;
-            this.updateStatistics();
+        if (error) {
+            console.error('Error adding new job:', error);
+        } else {
+            this.jobs.push(data[0]);
+            document.getElementById('newJobName').value = '';
+            document.getElementById('newJobBaseRate').value = '10395';
+            document.getElementById('newJobBaseHours').value = '192';
+            this.populateJobSelects();
+            this.populateChartViewSelect();
+            this.populateJobsList();
+            this.updateBaseRatesInfo();
+            if (this.jobs.length === 1) {
+                this.currentJobId = data[0].id;
+                this.updateStatistics();
+            }
         }
     }
 
-    deleteJob(jobId) {
-        // Check if job has entries
+    async deleteJob(jobId) {
         const hasEntries = this.entries.some(entry => entry.jobId === jobId);
-
         if (hasEntries) {
             if (!confirm(`This job has salary entries. Deleting it will also delete all associated entries. Continue?`)) {
                 return;
             }
-
-            // Remove associated entries
-            this.entries = this.entries.filter(entry => entry.jobId !== jobId);
+            const { error: entriesError } = await this.supabase.from('entries').delete().eq('job_id', jobId);
+            if (entriesError) {
+                console.error('Error deleting associated entries:', entriesError);
+                return;
+            }
         } else if (!confirm('Are you sure you want to delete this job?')) {
             return;
         }
 
-        // Remove the job
-        this.jobs = this.jobs.filter(job => job.id !== jobId);
+        const { error } = await this.supabase.from('jobs').delete().eq('id', jobId);
 
-        // If deleted job was current, set a new current job
-        if (this.currentJobId === jobId && this.jobs.length > 0) {
-            this.currentJobId = this.jobs[0].id;
-        } else if (this.jobs.length === 0) {
-            this.currentJobId = null;
+        if (error) {
+            console.error('Error deleting job:', error);
+        } else {
+            this.entries = this.entries.filter(entry => entry.jobId !== jobId);
+            this.jobs = this.jobs.filter(job => job.id !== jobId);
+
+            if (this.currentJobId === jobId && this.jobs.length > 0) {
+                this.currentJobId = this.jobs[0].id;
+            } else if (this.jobs.length === 0) {
+                this.currentJobId = null;
+            }
+
+            if (this.currentChartView === jobId) {
+                this.currentChartView = 'overall';
+                this.populateChartViewSelect();
+            }
+
+            this.populateJobSelects();
+            this.populateChartViewSelect();
+            this.populateJobsList();
+            this.updateSalaryHistory();
+            this.updateGeneralAnalytics();
+            this.updateChart();
+            this.updateStatistics();
+            this.updateBaseRatesInfo();
         }
-
-        // If deleted job was current chart view, reset to overall
-        if (this.currentChartView === jobId) {
-            this.currentChartView = 'overall';
-            this.populateChartViewSelect(); // Update the select element
-        }
-
-        this.saveData();
-        this.populateJobSelects();
-        this.populateChartViewSelect();
-        this.populateJobsList();
-        this.updateSalaryHistory();
-        this.updateGeneralAnalytics();
-        this.updateChart();
-        this.updateStatistics();
-        this.updateBaseRatesInfo();
     }
 
-    addSalaryEntry() {
+    async addSalaryEntry() {
         const jobId = document.getElementById('jobSelect').value;
-        const monthYearInput = document.getElementById('monthYearInput').value; // Get value from new input
+        const monthYearInput = document.getElementById('monthYearInput').value;
         const salary = parseFloat(document.getElementById('salary').value);
         const hours = parseFloat(document.getElementById('hours').value);
 
-        // Check if entry for this job and month already exists
-        const existingEntryIndex = this.entries.findIndex(entry =>
-            entry.jobId === jobId && entry.month === monthYearInput
+        const existingEntry = this.entries.find(entry =>
+            entry.job_id === jobId && entry.month === monthYearInput
         );
 
-        if (existingEntryIndex !== -1) {
+        if (existingEntry) {
             if (confirm(`An entry for this job and month already exists. Do you want to update it?`)) {
-                this.entries[existingEntryIndex].salary = salary;
-                this.entries[existingEntryIndex].hours = hours;
+                const { data, error } = await this.supabase
+                    .from('entries')
+                    .update({ salary, hours })
+                    .eq('id', existingEntry.id)
+                    .select();
+                if (error) {
+                    console.error('Error updating entry:', error);
+                } else {
+                    const index = this.entries.findIndex(e => e.id === existingEntry.id);
+                    this.entries[index] = { ...data[0], jobId: data[0].job_id }; // Add jobId
+                }
             } else {
                 return;
             }
         } else {
-            // Add new entry
-            this.entries.push({
-                id: this.generateId(),
-                jobId,
-                month: monthYearInput, // Use the combined month-year string
-                salary,
-                hours
-            });
+            const { data, error } = await this.supabase
+                .from('entries')
+                .insert([{ job_id: jobId, month: monthYearInput, salary, hours, user_id: this.user.id }])
+                .select();
+            if (error) {
+                console.error('Error adding entry:', error);
+            } else {
+                this.entries.push({ ...data[0], jobId: data[0].job_id }); // Add jobId
+            }
         }
 
-        this.saveData();
-
-        // Switch to the job that was just added
         this.currentJobId = jobId;
         document.getElementById('viewJobSelect').value = jobId;
-
-        // Update UI
         this.updateSalaryHistory();
         this.updateGeneralAnalytics();
         this.updateChart();
         this.updateStatistics();
-
-        // Clear form
         document.getElementById('salary').value = '';
-        this.setDefaultMonthYear(); // Call the updated function
+        this.setDefaultMonthYear();
     }
 
     setDefaultMonthYear() {
@@ -733,8 +693,9 @@ class SalaryTracker {
         statsTitle.textContent = `Last Entry (${formattedMonth})`;
 
         const { salary, hours } = currentEntry;
-        const hourlyRate = salary / hours;
-        const baseHourlyRate = currentJob.baseRate / currentJob.baseHours;
+        const hourlyRate = hours > 0 ? salary / hours : 0; // Avoid division by zero
+        // Ensure baseRate and baseHours are numbers and not zero to avoid NaN/Infinity
+        const baseHourlyRate = (currentJob.baseRate && currentJob.baseHours && currentJob.baseHours !== 0) ? (currentJob.baseRate / currentJob.baseHours) : 0;
         const baseSalaryForHours = baseHourlyRate * hours;
         const difference = salary - baseSalaryForHours;
 
@@ -797,7 +758,8 @@ class SalaryTracker {
 
             // Calculate hourly rate and differences
             const hourlyRate = entry.salary / entry.hours;
-            const baseHourlyRate = job.baseRate / job.baseHours;
+            // Ensure baseRate and baseHours are numbers and not zero to avoid NaN/Infinity
+            const baseHourlyRate = (job.baseRate && job.baseHours && job.baseHours !== 0) ? (job.baseRate / job.baseHours) : 0;
             const baseSalaryForHours = baseHourlyRate * entry.hours;
             const salaryDiff = entry.salary - baseSalaryForHours;
             const rateDiff = hourlyRate - baseHourlyRate;
@@ -924,52 +886,44 @@ class SalaryTracker {
         document.getElementById('editEntryModal').style.display = 'block';
     }
 
-    saveEntryEdit() {
+    async saveEntryEdit() {
         const entryId = document.getElementById('editEntryId').value;
-        const jobId = document.getElementById('editEntryJobHidden').value; // Get jobId from hidden input
-        const monthYear = document.getElementById('editEntryMonthYear').value; // Get combined month/year
+        const jobId = document.getElementById('editEntryJobHidden').value;
+        const monthYear = document.getElementById('editEntryMonthYear').value;
         const salary = parseFloat(document.getElementById('editEntrySalary').value);
         const hours = parseFloat(document.getElementById('editEntryHours').value);
 
-        // Check if another entry exists for this job and month (excluding current entry)
-        const existingEntry = this.entries.find(entry =>
-            entry.jobId === jobId &&
-            entry.month === monthYear &&
-            entry.id !== entryId
-        );
+        const { data, error } = await this.supabase
+            .from('entries')
+            .update({ month: monthYear, salary, hours })
+            .eq('id', entryId)
+            .select();
 
-        if (existingEntry) {
-            alert('An entry for this job and month already exists. Please choose a different month or job.');
-            return;
-        }
-
-        // Find and update the entry
-        const entryIndex = this.entries.findIndex(entry => entry.id === entryId);
-        if (entryIndex !== -1) {
-            this.entries[entryIndex].jobId = jobId;
-            this.entries[entryIndex].month = monthYear;
-            this.entries[entryIndex].salary = salary;
-            this.entries[entryIndex].hours = hours;
-
-            this.saveData();
+        if (error) {
+            console.error('Error updating entry:', error);
+        } else {
+            const index = this.entries.findIndex(e => e.id === entryId);
+            this.entries[index] = { ...data[0], jobId: data[0].job_id }; // Add jobId
             this.updateSalaryHistory();
             this.updateGeneralAnalytics();
             this.updateChart();
             this.updateStatistics();
-
-            // Close the modal
             document.getElementById('editEntryModal').style.display = 'none';
         }
     }
 
-    deleteEntry(entryId) {
+    async deleteEntry(entryId) {
         if (confirm('Are you sure you want to delete this entry?')) {
-            this.entries = this.entries.filter(entry => entry.id !== entryId);
-            this.saveData();
-            this.updateSalaryHistory();
-            this.updateGeneralAnalytics();
-            this.updateChart();
-            this.updateStatistics();
+            const { error } = await this.supabase.from('entries').delete().eq('id', entryId);
+            if (error) {
+                console.error('Error deleting entry:', error);
+            } else {
+                this.entries = this.entries.filter(entry => entry.id !== entryId);
+                this.updateSalaryHistory();
+                this.updateGeneralAnalytics();
+                this.updateChart();
+                this.updateStatistics();
+            }
         }
     }
 
@@ -1008,6 +962,30 @@ class SalaryTracker {
             gearAnimation.classList.remove('active-settings');
             gearAnimation.removeAttribute('data-tooltip');
         }
+    }
+
+    // Helper to get a summary of current analytics settings for tooltip
+    getAnalyticsSummary() {
+        let summary = 'Current Analytics Settings:\n';
+        summary += `Period: ${this.analyticsSettings.period}\n`;
+
+        if (this.analyticsSettings.period === 'custom') {
+            summary += `  Start Date: ${this.analyticsSettings.customStartDate || 'N/A'}\n`;
+            summary += `  End Date: ${this.analyticsSettings.customEndDate || 'N/A'}\n`;
+        }
+
+        if (this.analyticsSettings.includedJobs.length === this.jobs.length) {
+            summary += 'Jobs: All Jobs Included\n';
+        } else if (this.analyticsSettings.includedJobs.length === 0) {
+            summary += 'Jobs: No Jobs Included\n';
+        } else {
+            const includedJobNames = this.analyticsSettings.includedJobs
+                .map(jobId => this.jobs.find(job => job.id === jobId)?.name)
+                .filter(name => name)
+                .join(', ');
+            summary += `Jobs: ${includedJobNames}\n`;
+        }
+        return summary;
     }
 
     updateBaseRatesInfo() {
@@ -1267,71 +1245,52 @@ class SalaryTracker {
         this.chart.update();
     }
 
-    migrateOldData() {
-        const oldData = localStorage.getItem('salaryTrackerData');
-        if (!oldData) return;
+    async migrateOldData() {
+        const oldJobs = localStorage.getItem('salaryTrackerJobs');
+        const oldEntries = localStorage.getItem('salaryTrackerEntries');
 
-        try {
-            const parsedData = JSON.parse(oldData);
-
-            // Check if we need to migrate (if we have no entries but old data exists)
-            if (this.entries.length === 0 && parsedData) {
-                // Create default jobs if they don't exist
-                if (this.jobs.length === 0) {
-                    this.setupDefaultJobs();
-                }
-
-                const mainJobId = this.jobs.find(job => job.name === 'Main Job')?.id;
-                const secondJobId = this.jobs.find(job => job.name === 'Second Job')?.id;
-                const sideJobId = this.jobs.find(job => job.name === 'Side Jobs')?.id;
-
-                // Migrate main job data
-                if (mainJobId && parsedData.main) {
-                    Object.entries(parsedData.main).forEach(([month, data]) => {
-                        this.entries.push({
-                            id: this.generateId(),
-                            jobId: mainJobId,
-                            month,
-                            salary: data.salary,
-                            hours: data.hours
-                        });
-                    });
-                }
-
-                // Migrate second job data
-                if (secondJobId && parsedData.second) {
-                    Object.entries(parsedData.second).forEach(([month, data]) => {
-                        this.entries.push({
-                            id: this.generateId(),
-                            jobId: secondJobId,
-                            month,
-                            salary: data.salary,
-                            hours: data.hours
-                        });
-                    });
-                }
-
-                // Migrate side jobs data
-                if (sideJobId && parsedData.side) {
-                    Object.entries(parsedData.side).forEach(([month, data]) => {
-                        this.entries.push({
-                            id: this.generateId(),
-                            jobId: sideJobId,
-                            month,
-                            salary: data.salary,
-                            hours: data.hours
-                        });
-                    });
-                }
-
-                // Save the migrated data
-                this.saveData();
-
-                // Remove old data format
-                localStorage.removeItem('salaryTrackerData');
+        if ((oldJobs || oldEntries) && this.jobs.length === 0 && this.entries.length === 0) {
+            if (!confirm('Old local data found. Do you want to migrate it to Supabase? This is a one-time operation.')) {
+                localStorage.removeItem('salaryTrackerJobs');
+                localStorage.removeItem('salaryTrackerEntries');
+                return;
             }
-        } catch (error) {
-            console.error('Error migrating old data:', error);
+
+            try {
+                if (oldJobs) {
+                    const jobsToMigrate = JSON.parse(oldJobs).map(job => ({
+                        name: job.name,
+                        base_rate: job.baseRate,
+                        base_hours: job.baseHours
+                    }));
+                    const { data: newJobs, error: jobsError } = await this.supabase.from('jobs').insert(jobsToMigrate).select();
+                    if (jobsError) throw jobsError;
+                    this.jobs = newJobs;
+                }
+
+                if (oldEntries) {
+                    const entriesToMigrate = JSON.parse(oldEntries).map(entry => {
+                        const oldJob = JSON.parse(oldJobs).find(j => j.id === entry.jobId);
+                        const newJob = this.jobs.find(j => j.name === oldJob.name);
+                        return {
+                            job_id: newJob.id,
+                            month: entry.month,
+                            salary: entry.salary,
+                            hours: entry.hours
+                        };
+                    });
+                    const { error: entriesError } = await this.supabase.from('entries').insert(entriesToMigrate);
+                    if (entriesError) throw entriesError;
+                }
+
+                alert('Data migrated successfully!');
+                localStorage.removeItem('salaryTrackerJobs');
+                localStorage.removeItem('salaryTrackerEntries');
+                await this.loadData(); // Reload data from Supabase
+            } catch (error) {
+                console.error('Error migrating data:', error);
+                alert(`Error migrating data: ${error.message}`);
+            }
         }
     }
     // Populate Analytics Settings Modal
@@ -1523,9 +1482,8 @@ class SalaryTracker {
     }
 }
 
-// Initialize the app when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    const app = new SalaryTracker();
-    app.setupTooltips(); // Initialize tooltips
-});
-    
+// The app is now initialized in auth.js after a successful login.
+// document.addEventListener('DOMContentLoaded', () => {
+//     const app = new SalaryTracker();
+//     app.setupTooltips(); // Initialize tooltips
+// });

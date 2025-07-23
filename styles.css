@@ -1431,6 +1431,39 @@ input:checked+.slider:before {
     }
 }
 
+/* Auth Container */
+#auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.auth-form {
+    background-color: var(--bg-secondary);
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px var(--shadow-color);
+    width: 100%;
+    max-width: 400px;
+}
+
+#user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#user-info span {
+    font-weight: 500;
+}
+
+#logout-btn {
+    background-color: var(--danger-color);
+    font-size: 12px;
+    padding: 8px 12px;
+}
+
 /* Theme
  Switcher Styles */
 .theme-switcher {
