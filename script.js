@@ -136,8 +136,11 @@ class SalaryTracker {
             this.currentJobId = this.jobs[0].id;
             this.updateStatistics();
         }
+
+        // Initialize Telegram integration
+        this.checkTelegramLinkStatus();
     }
-    
+
     // This function is no longer needed as we won't be creating default jobs.
     // Users will add their own jobs.
     // setupDefaultJobs() { ... }
@@ -145,10 +148,10 @@ class SalaryTracker {
     setupThemeToggle() {
         const themeToggle = document.getElementById('themeToggle');
         const body = document.body;
-        
+
         // Load saved theme preference
         const savedTheme = localStorage.getItem('salaryTrackerTheme') || 'dark';
-        
+
         // Apply saved theme
         if (savedTheme === 'light') {
             body.setAttribute('data-theme', 'light');
@@ -157,7 +160,7 @@ class SalaryTracker {
             body.removeAttribute('data-theme');
             themeToggle.checked = false;
         }
-        
+
         // Theme toggle event listener
         themeToggle.addEventListener('change', () => {
             if (themeToggle.checked) {
@@ -169,18 +172,18 @@ class SalaryTracker {
                 body.removeAttribute('data-theme');
                 localStorage.setItem('salaryTrackerTheme', 'dark');
             }
-            
+
             // Update chart colors if chart exists
             if (this.chart) {
                 this.updateChartTheme();
             }
         });
     }
-    
+
     // Update chart theme colors
     updateChartTheme() {
         const isDarkTheme = !document.body.hasAttribute('data-theme') || document.body.getAttribute('data-theme') === 'dark';
-        
+
         if (this.chart) {
             // Update chart options for theme
             this.chart.options.plugins.legend.labels.color = isDarkTheme ? '#F3F0F5' : '#0D0A0B';
@@ -188,11 +191,11 @@ class SalaryTracker {
             this.chart.options.scales.y.ticks.color = isDarkTheme ? '#F3F0F5' : '#0D0A0B';
             this.chart.options.scales.x.grid.color = isDarkTheme ? '#272025' : '#f0ecf2';
             this.chart.options.scales.y.grid.color = isDarkTheme ? '#272025' : '#f0ecf2';
-            
+
             // Update chart background
             Chart.defaults.color = isDarkTheme ? '#F3F0F5' : '#0D0A0B';
             Chart.defaults.borderColor = isDarkTheme ? '#272025' : '#f0ecf2';
-            
+
             // Update chart
             this.chart.update();
         }
@@ -369,6 +372,11 @@ class SalaryTracker {
         document.getElementById('editEntryForm').addEventListener('submit', (e) => {
             e.preventDefault();
             this.saveEntryEdit();
+        });
+
+        // Telegram Integration Event Listeners
+        document.getElementById('linkTelegramBtn').addEventListener('click', () => {
+            this.generateTelegramLinkCode();
         });
     }
 
@@ -1484,6 +1492,111 @@ class SalaryTracker {
         this.populateChartViewSelect(); // This will set the selected value
 
         this.updateChart();
+    }
+
+    async checkTelegramLinkStatus() {
+        const telegramStatusElement = document.getElementById('telegramStatus');
+        const linkTelegramBtn = document.getElementById('linkTelegramBtn');
+        const telegramLinkInstructions = document.getElementById('telegramLinkInstructions');
+        const telegramLinkCodeInput = document.getElementById('telegramLinkCode');
+
+        if (!this.user) {
+            telegramStatusElement.innerHTML = '<p>Status: Not logged in</p>';
+            linkTelegramBtn.style.display = 'none';
+            telegramLinkInstructions.style.display = 'none';
+            return;
+        }
+
+        const { data, error } = await this.supabase
+            .from('telegram_users')
+            .select('telegram_id')
+            .eq('user_id', this.user.id)
+            .single();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+            console.error('Error checking Telegram link status:', error);
+            telegramStatusElement.innerHTML = '<p>Status: Error checking link</p>';
+            linkTelegramBtn.style.display = 'block';
+            telegramLinkInstructions.style.display = 'none';
+        } else if (data) {
+            telegramStatusElement.innerHTML = `<p>Status: Linked (Telegram ID: ${data.telegram_id})</p>`;
+            linkTelegramBtn.style.display = 'none';
+            telegramLinkInstructions.style.display = 'none';
+        } else {
+            telegramStatusElement.innerHTML = '<p>Status: Not linked</p>';
+            linkTelegramBtn.style.display = 'block';
+            telegramLinkInstructions.style.display = 'none';
+        }
+    }
+
+    async generateTelegramLinkCode() {
+        const telegramLinkInstructions = document.getElementById('telegramLinkInstructions');
+        const telegramLinkCodeInput = document.getElementById('telegramLinkCode');
+        const linkTelegramBtn = document.getElementById('linkTelegramBtn');
+        const telegramStatusElement = document.getElementById('telegramStatus');
+
+        if (!this.user) {
+            alert('Please log in to link your Telegram account.');
+            return;
+        }
+
+        // Generate a simple, short code for linking
+        const code = Math.random().toString(36).substring(2, 8).toUpperCase(); // 6-character alphanumeric code
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes expiry
+
+        // Remove any existing link codes for this user
+        const { error: deleteError } = await this.supabase
+            .from('link_codes')
+            .delete()
+            .eq('user_id', this.user.id);
+
+        if (deleteError) {
+            console.error('Error deleting old link codes:', deleteError);
+            alert('Произошла ошибка при генерации кода связывания. Попробуйте еще раз.');
+            return;
+        }
+
+        // Insert the new link code into Supabase
+        const { data, error } = await this.supabase
+            .from('link_codes')
+            .insert([{ user_id: this.user.id, code: code, expires_at: expiresAt }])
+            .select();
+
+        if (error) {
+            console.error('Error saving Telegram link code:', error);
+            alert('Произошла ошибка при генерации кода связывания. Попробуйте еще раз.');
+            return;
+        }
+
+        telegramLinkCodeInput.value = `/link ${code}`;
+        telegramLinkInstructions.style.display = 'block';
+        linkTelegramBtn.style.display = 'none';
+        telegramStatusElement.innerHTML = '<p>Status: Waiting for Telegram link...</p>';
+
+        alert(`Отправьте этот код вашему боту в Telegram: /link ${code}`);
+
+        // The bot will handle the actual linking and update the telegram_users table.
+        // The web app will check the status on refresh/re-login.
+        // For a more dynamic update, Supabase Realtime could be used.
+    }
+
+    // This function will primarily be called by the Vercel Function (Telegram bot)
+    // to save the telegram_id after the user sends the /link command.
+    // It's included here for conceptual completeness, but the actual call will be server-side.
+    async saveTelegramId(userId, telegramId) {
+        const { data, error } = await this.supabase
+            .from('telegram_users')
+            .insert([{ user_id: userId, telegram_id: telegramId }])
+            .select();
+
+        if (error) {
+            console.error('Error saving Telegram ID:', error);
+            return false;
+        } else {
+            console.log('Telegram ID saved:', data);
+            this.checkTelegramLinkStatus(); // Update UI after successful link
+            return true;
+        }
     }
 }
 
