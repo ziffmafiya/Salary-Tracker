@@ -69,19 +69,24 @@ module.exports = async (req, res) => {
         let chatId;
         let text;
         let userId;
-        let data; // For callback_query data
+        let action; // This will hold the command or callback data
 
         if (message) {
             chatId = message.chat.id;
             text = message.text;
             userId = message.from.id;
             console.log(`Received message from ${chatId}: ${text}`);
+            if (text && text.startsWith('/')) {
+                action = text; // Full command text for commands like /login
+            } else {
+                action = text; // Regular text message, or if it's not a command, it's just text
+            }
         } else if (callback_query) {
             chatId = callback_query.message.chat.id;
-            text = callback_query.message.text; // The text of the message the button was attached to
+            text = callback_query.message.text; // The text of the message the button was attached to (can be null)
             userId = callback_query.from.id;
-            data = callback_query.data; // The data sent with the button
-            console.log(`Received callback query from ${chatId}: ${data}`);
+            action = callback_query.data; // The data sent with the button
+            console.log(`Received callback query from ${chatId}: ${action}`);
             // Acknowledge the callback query to remove the loading state from the button
             await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
                 method: 'POST',
@@ -124,7 +129,6 @@ module.exports = async (req, res) => {
         }
 
         const isLoggedIn = !!telegramUser;
-        let action = data || (text ? text.split(' ')[0] : ''); // Use callback_query data or message text command
 
         // Handle /start command specifically for initial setup
         if (action === '/start') {
