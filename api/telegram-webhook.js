@@ -1,5 +1,5 @@
-const { createClient } = require('@supabase/supabase-js');
-const fetch = require('node-fetch');
+import { createClient } from '@supabase/supabase-js';
+import fetch from 'node-fetch';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -185,7 +185,7 @@ function generateQuickChartUrl(labels, data, type, title, yAxisLabel, borderColo
 }
 
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
     if (req.method === 'POST') {
         const { message } = req.body;
 
