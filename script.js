@@ -28,7 +28,12 @@ class SalaryTracker {
         if (jobsError) {
             console.error('Error loading jobs:', jobsError);
         } else {
-            this.jobs = jobs;
+            // Map base_rate to baseRate and base_hours to baseHours for consistency
+            this.jobs = jobs.map(job => ({
+                ...job,
+                baseRate: job.base_rate,
+                baseHours: job.base_hours
+            }));
         }
 
         const { data: entries, error: entriesError } = await this.supabase.from('entries').select('*');
