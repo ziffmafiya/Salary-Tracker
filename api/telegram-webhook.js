@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const crypto = require('crypto');
 
 // Замените на ваш токен бота Telegram и URL/ключ Supabase
 // В продакшене на Vercel эти значения должны быть установлены как Environment Variables
@@ -7,6 +8,11 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Функция для генерации временного токена для сброса пароля
+function generateResetToken() {
+    return crypto.randomBytes(32).toString('hex');
+}
 
 // Функция для отправки сообщения в Telegram
 async function sendMessage(chatId, text, parseMode = 'Markdown', replyMarkup = null) {
@@ -109,6 +115,7 @@ module.exports = async (req, res) => {
                 buttons.push([{ text: 'Выйти', callback_data: 'logout' }]);
             } else {
                 buttons.push([{ text: 'Авторизоваться', callback_data: 'login_prompt' }]);
+                buttons.push([{ text: 'Сбросить пароль', callback_data: 'reset_password_prompt' }]);
             }
             return {
                 inline_keyboard: buttons
@@ -133,6 +140,90 @@ module.exports = async (req, res) => {
         // Handle /start command specifically for initial setup
         if (action === '/start') {
             await sendMessage(chatId, 'Привет! Я бот для отслеживания зарплаты. Выберите действие:', 'Markdown', createMainMenuKeyboard(isLoggedIn));
+            return res.status(200).send('OK');
+        }
+
+        // Handle reset password command
+        if (action === '/reset_password' || action === 'reset_password_prompt') {
+            await sendMessage(chatId, 'Для сброса пароля введите ваш email в формате: `/reset_password <ваш_email>`\n\nПосле этого вы получите ссылку для сброса пароля на ваш email.');
+            return res.status(200).send('OK');
+        }
+
+        // Handle reset password with email
+        if (action.startsWith('/reset_password ')) {
+            const email = action.split(' ').slice(1).join(' ').trim();
+            
+            if (!email) {
+                await sendMessage(chatId, 'Пожалуйста, укажите email в формате: `/reset_password <ваш_email>`');
+                return res.status(200).send('Missing email for password reset');
+            }
+
+            try {
+                // Проверяем, существует ли пользователь с таким email
+                // Используем signInWithPassword с неверным паролем для проверки существования email
+                const { data, error } = await supabase.auth.signInWithPassword({ 
+                    email: email, 
+                    password: 'dummy_password_for_check' 
+                });
+                
+                // Если ошибка связана с неверным паролем, значит пользователь существует
+                if (error && error.message.includes('Invalid login credentials')) {
+                    // Пользователь существует, продолжаем
+                } else if (error && error.message.includes('Email not confirmed')) {
+                    // Пользователь существует, но email не подтвержден
+                    await sendMessage(chatId, 'Ваш email не подтвержден. Пожалуйста, подтвердите email перед сбросом пароля.');
+                    return res.status(200).send('Email not confirmed');
+                } else if (error) {
+                    console.error('Error checking user existence:', error);
+                    await sendMessage(chatId, 'Произошла ошибка при проверке email. Пожалуйста, попробуйте позже.');
+                    return res.status(200).send('Error checking user existence');
+                } else {
+                    // Неожиданный успех - это не должно произойти с dummy паролем
+                    console.error('Unexpected success with dummy password');
+                    await sendMessage(chatId, 'Произошла ошибка при проверке email. Пожалуйста, попробуйте позже.');
+                    return res.status(200).send('Unexpected success');
+                }
+
+                // Генерируем токен для сброса пароля
+                const resetToken = generateResetToken();
+                const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 час
+
+                // Сохраняем токен в базе данных
+                const { error: tokenError } = await supabase
+                    .from('password_reset_tokens')
+                    .insert([{
+                        email: email,
+                        token: resetToken,
+                        expires_at: expiresAt.toISOString(),
+                        telegram_chat_id: chatId
+                    }]);
+
+                if (tokenError) {
+                    console.error('Error saving reset token:', tokenError);
+                    await sendMessage(chatId, 'Произошла ошибка при создании токена сброса. Пожалуйста, попробуйте позже.');
+                    return res.status(200).send('Error saving reset token');
+                }
+
+                // Отправляем email с ссылкой для сброса пароля
+                const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+                
+                // Используем Supabase для отправки email
+                const { error: emailError } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: resetUrl
+                });
+
+                if (emailError) {
+                    console.error('Error sending reset email:', emailError);
+                    await sendMessage(chatId, 'Произошла ошибка при отправке email. Пожалуйста, попробуйте позже.');
+                    return res.status(200).send('Error sending reset email');
+                }
+
+                await sendMessage(chatId, `✅ Ссылка для сброса пароля отправлена на email: ${email}\n\nПроверьте вашу почту и перейдите по ссылке для установки нового пароля.\n\nСсылка действительна 1 час.`, 'Markdown', createMainMenuKeyboard(isLoggedIn));
+                
+            } catch (error) {
+                console.error('Unexpected reset password error:', error);
+                await sendMessage(chatId, 'Произошла непредвиденная ошибка при сбросе пароля.');
+            }
             return res.status(200).send('OK');
         }
 
@@ -202,7 +293,7 @@ module.exports = async (req, res) => {
 
         // If not logged in and not a login command, prompt for login
         if (!isLoggedIn) {
-            await sendMessage(chatId, 'Вы не авторизованы. Пожалуйста, используйте команду `/login <ваш_email> <ваш_пароль>` для входа или нажмите кнопку "Авторизоваться".', 'Markdown', createMainMenuKeyboard(false));
+            await sendMessage(chatId, 'Вы не авторизованы. Выберите действие:', 'Markdown', createMainMenuKeyboard(false));
             return res.status(200).send('Not authorized');
         }
 
