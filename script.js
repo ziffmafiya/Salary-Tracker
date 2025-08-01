@@ -1,7 +1,6 @@
 class SalaryTracker {
-    constructor(supabaseClient) {
-        this.supabase = supabaseClient;
-        this.user = null;
+    constructor() {
+        this.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         this.currentJobId = null;
         this.currentPeriod = 'all';
         this.currentChartView = 'overall';
@@ -106,9 +105,6 @@ class SalaryTracker {
     }
 
     async init() {
-        const { data: { user } } = await this.supabase.auth.getUser();
-        this.user = user;
-
         await this.loadData(); // Загружает работы и настройки аналитики из localStorage
         await this.migrateOldData(); // Миграция данных, если необходимо
 
@@ -512,7 +508,7 @@ class SalaryTracker {
 
         const { data, error } = await this.supabase
             .from('jobs')
-            .insert([{ name: jobName, base_rate: baseRate, base_hours: baseHours, user_id: this.user.id }])
+            .insert([{ name: jobName, base_rate: baseRate, base_hours: baseHours }])
             .select();
 
         if (error) {
@@ -607,7 +603,7 @@ class SalaryTracker {
         } else {
             const { data, error } = await this.supabase
                 .from('entries')
-                .insert([{ job_id: jobId, month: monthYearInput, salary, hours, user_id: this.user.id }])
+                .insert([{ job_id: jobId, month: monthYearInput, salary, hours }])
                 .select();
             if (error) {
                 console.error('Error adding entry:', error);
@@ -1487,8 +1483,7 @@ class SalaryTracker {
     }
 }
 
-// The app is now initialized in auth.js after a successful login.
-// document.addEventListener('DOMContentLoaded', () => {
-//     const app = new SalaryTracker();
-//     app.setupTooltips(); // Initialize tooltips
-// });
+document.addEventListener('DOMContentLoaded', () => {
+    const app = new SalaryTracker();
+    app.setupTooltips(); // Initialize tooltips
+});
