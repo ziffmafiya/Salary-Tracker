@@ -468,6 +468,18 @@ td {
     /* Ensure vertical alignment in table cells */
 }
 
+#salaryHistoryTable th:nth-child(n+3),
+#salaryHistoryTable td:nth-child(n+3) {
+    text-align: right;
+}
+
+#salaryHistoryTable th:nth-child(1),
+#salaryHistoryTable td:nth-child(1),
+#salaryHistoryTable th:nth-child(2),
+#salaryHistoryTable td:nth-child(2) {
+    text-align: left;
+}
+
 th {
     background-color: #1a1a1a;
     color: #ffffff;
