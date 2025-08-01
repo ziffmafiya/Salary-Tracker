@@ -609,17 +609,16 @@ class SalaryTracker {
                 console.error('Error adding entry:', error);
             } else {
                 this.entries.push({ ...data[0], jobId: data[0].job_id }); // Add jobId
+                this.currentJobId = jobId;
+                document.getElementById('viewJobSelect').value = jobId;
+                this.updateSalaryHistory();
+                this.updateGeneralAnalytics();
+                this.updateChart();
+                this.updateStatistics();
+                document.getElementById('salary').value = '';
+                this.setDefaultMonthYear();
             }
         }
-
-        this.currentJobId = jobId;
-        document.getElementById('viewJobSelect').value = jobId;
-        this.updateSalaryHistory();
-        this.updateGeneralAnalytics();
-        this.updateChart();
-        this.updateStatistics();
-        document.getElementById('salary').value = '';
-        this.setDefaultMonthYear();
     }
 
     setDefaultMonthYear() {
