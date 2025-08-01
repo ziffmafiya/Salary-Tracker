@@ -468,9 +468,8 @@ td {
     /* Ensure vertical alignment in table cells */
 }
 
-#salaryHistoryTable th:nth-child(n+3),
-#salaryHistoryTable td:nth-child(n+3) {
-    text-align: right;
+#salaryHistoryTable th, #salaryHistoryTable td {
+    white-space: nowrap;
 }
 
 #salaryHistoryTable th:nth-child(1),
@@ -478,6 +477,19 @@ td {
 #salaryHistoryTable th:nth-child(2),
 #salaryHistoryTable td:nth-child(2) {
     text-align: left;
+}
+
+#salaryHistoryTable th:nth-child(3),
+#salaryHistoryTable td:nth-child(3),
+#salaryHistoryTable th:nth-child(4),
+#salaryHistoryTable td:nth-child(4),
+#salaryHistoryTable th:nth-child(5),
+#salaryHistoryTable td:nth-child(5),
+#salaryHistoryTable th:nth-child(6),
+#salaryHistoryTable td:nth-child(6),
+#salaryHistoryTable th:nth-child(7),
+#salaryHistoryTable td:nth-child(7) {
+    text-align: right;
 }
 
 th {
