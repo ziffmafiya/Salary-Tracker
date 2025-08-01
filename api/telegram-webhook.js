@@ -98,141 +98,31 @@ module.exports = async (req, res) => {
         }
 
         // Helper function to create main menu keyboard
-        const createMainMenuKeyboard = (isLoggedIn) => {
-            const buttons = [];
-            if (isLoggedIn) {
-                buttons.push([{ text: 'Мои работы', callback_data: 'jobs' }]);
-                buttons.push([{ text: 'Добавить зарплату', callback_data: 'add_salary_prompt' }]);
-                buttons.push([{ text: 'Статистика', callback_data: 'stats' }]);
-                buttons.push([{ text: 'График дохода', callback_data: 'graph_salary' }]);
-                buttons.push([{ text: 'График почасовой ставки', callback_data: 'graph_hourly' }]);
-                buttons.push([{ text: 'Выйти', callback_data: 'logout' }]);
-            } else {
-                buttons.push([{ text: 'Авторизоваться', callback_data: 'login_prompt' }]);
-            }
+        const createMainMenuKeyboard = () => {
+            const buttons = [
+                [{ text: 'Мои работы', callback_data: 'jobs' }],
+                [{ text: 'Добавить зарплату', callback_data: 'add_salary_prompt' }],
+                [{ text: 'Статистика', callback_data: 'stats' }],
+                [{ text: 'График дохода', callback_data: 'graph_salary' }],
+                [{ text: 'График почасовой ставки', callback_data: 'graph_hourly' }]
+            ];
             return {
                 inline_keyboard: buttons
             };
         };
 
-        // Check if user is linked to Supabase
-        let { data: telegramUser, error: telegramUserError } = await supabase
-            .from('telegram_users')
-            .select('user_id')
-            .eq('telegram_chat_id', chatId)
-            .single();
-
-        if (telegramUserError && telegramUserError.code !== 'PGRST116') {
-            console.error('Error fetching telegram user:', telegramUserError);
-            await sendMessage(chatId, 'Произошла ошибка при проверке вашего аккаунта. Пожалуйста, попробуйте позже.');
-            return res.status(200).send('Error fetching telegram user');
-        }
-
-        const isLoggedIn = !!telegramUser;
-
         // Handle /start command specifically for initial setup
         if (action === '/start') {
-            await sendMessage(chatId, 'Привет! Я бот для отслеживания зарплаты. Выберите действие:', 'Markdown', createMainMenuKeyboard(isLoggedIn));
+            await sendMessage(chatId, 'Привет! Я бот для отслеживания зарплаты. Выберите действие:', 'Markdown', createMainMenuKeyboard());
             return res.status(200).send('OK');
         }
 
-        // Handle login command (still text-based for credentials)
-        if (action.startsWith('/login')) {
-            const args = action.split(' ').slice(1);
-            const email = args[0];
-            const password = args[1];
-
-            if (!email || !password) {
-                await sendMessage(chatId, 'Пожалуйста, укажите email и пароль в формате: `/login <email> <пароль>`');
-                return res.status(200).send('Missing login credentials');
-            }
-
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-                if (error) {
-                    console.error('Supabase login error:', error);
-                    await sendMessage(chatId, `Ошибка авторизации: ${error.message}. Проверьте правильность email и пароля.`);
-                } else if (data.user) {
-                    const { data: existingLink, error: linkError } = await supabase
-                        .from('telegram_users')
-                        .select('*')
-                        .eq('user_id', data.user.id)
-                        .single();
-
-                    if (linkError && linkError.code !== 'PGRST116') {
-                        console.error('Error checking existing link:', linkError);
-                        await sendMessage(chatId, 'Произошла ошибка при проверке существующей связи.');
-                        return res.status(200).send('Error checking existing link');
-                    }
-
-                    if (existingLink) {
-                        if (existingLink.telegram_chat_id !== chatId) {
-                            const { error: updateError } = await supabase
-                                .from('telegram_users')
-                                .update({ telegram_chat_id: chatId })
-                                .eq('user_id', data.user.id);
-                            if (updateError) {
-                                console.error('Error updating chat ID:', updateError);
-                                await sendMessage(chatId, 'Произошла ошибка при обновлении вашего Telegram ID.');
-                            } else {
-                                await sendMessage(chatId, `Вы успешно авторизованы как ${data.user.email}! Ваш Telegram ID обновлен.`, 'Markdown', createMainMenuKeyboard(true));
-                            }
-                        } else {
-                            await sendMessage(chatId, `Вы уже авторизованы как ${data.user.email}!`, 'Markdown', createMainMenuKeyboard(true));
-                        }
-                    } else {
-                        const { error: insertError } = await supabase
-                            .from('telegram_users')
-                            .insert([{ user_id: data.user.id, telegram_chat_id: chatId }]);
-                        if (insertError) {
-                            console.error('Error inserting new link:', insertError);
-                            await sendMessage(chatId, 'Произошла ошибка при связывании вашего аккаунта.');
-                        } else {
-                            await sendMessage(chatId, `Вы успешно авторизованы как ${data.user.email}! Теперь вы можете использовать команды бота.`, 'Markdown', createMainMenuKeyboard(true));
-                        }
-                    }
-                }
-            } catch (e) {
-                console.error('Unexpected login error:', e);
-                await sendMessage(chatId, 'Произошла непредвиденная ошибка при авторизации.');
-            }
-            return res.status(200).send('OK');
-        }
-
-        // If not logged in and not a login command, prompt for login
-        if (!isLoggedIn) {
-            await sendMessage(chatId, 'Вы не авторизованы. Пожалуйста, используйте команду `/login <ваш_email> <ваш_пароль>` для входа или нажмите кнопку "Авторизоваться".', 'Markdown', createMainMenuKeyboard(false));
-            return res.status(200).send('Not authorized');
-        }
-
-        // User is logged in, handle actions
-        const userSupabaseId = telegramUser.user_id;
-
+        // Handle actions
         switch (action) {
-            case 'login_prompt':
-                await sendMessage(chatId, 'Пожалуйста, введите ваш email и пароль в формате: `/login <email> <пароль>`');
-                break;
-
-            case 'logout':
-                const { error: deleteError } = await supabase
-                    .from('telegram_users')
-                    .delete()
-                    .eq('user_id', userSupabaseId);
-
-                if (deleteError) {
-                    console.error('Error logging out:', deleteError);
-                    await sendMessage(chatId, 'Произошла ошибка при выходе из аккаунта. Пожалуйста, попробуйте позже.');
-                } else {
-                    await sendMessage(chatId, 'Вы успешно вышли из аккаунта. Чтобы снова использовать бота, авторизуйтесь с помощью `/login`.', 'Markdown', createMainMenuKeyboard(false));
-                }
-                break;
-
             case 'jobs':
                 const { data: jobs, error: jobsError } = await supabase
                     .from('jobs')
-                    .select('name, base_rate, base_hours')
-                    .eq('user_id', userSupabaseId);
+                    .select('name, base_rate, base_hours');
 
                 if (jobsError) {
                     console.error('Error fetching jobs:', jobsError);
@@ -257,7 +147,6 @@ module.exports = async (req, res) => {
                 const { data: entries, error: entriesError } = await supabase
                     .from('entries')
                     .select('salary, hours, month, job_id')
-                    .eq('user_id', userSupabaseId)
                     .order('month', { ascending: false });
 
                 if (entriesError) {
@@ -325,7 +214,6 @@ module.exports = async (req, res) => {
                 const { data: graphEntries, error: graphEntriesError } = await supabase
                     .from('entries')
                     .select('salary, hours, month, job_id')
-                    .eq('user_id', userSupabaseId)
                     .order('month', { ascending: true });
 
                 if (graphEntriesError) {
@@ -431,7 +319,6 @@ module.exports = async (req, res) => {
                 const { data: jobData, error: jobError } = await supabase
                     .from('jobs')
                     .select('id')
-                    .eq('user_id', userSupabaseId)
                     .eq('name', jobName)
                     .single();
 
@@ -447,7 +334,6 @@ module.exports = async (req, res) => {
                     .select('id')
                     .eq('job_id', jobId)
                     .eq('month', monthYear)
-                    .eq('user_id', userSupabaseId)
                     .single();
 
                 if (entryError && entryError.code !== 'PGRST116') {
@@ -465,23 +351,23 @@ module.exports = async (req, res) => {
                         console.error('Error updating entry:', updateEntryError);
                         await sendMessage(chatId, 'Произошла ошибка при обновлении записи.');
                     } else {
-                        await sendMessage(chatId, `Запись о зарплате за ${monthYear} для работы "${jobName}" успешно обновлена.`, 'Markdown', createMainMenuKeyboard(true));
+                        await sendMessage(chatId, `Запись о зарплате за ${monthYear} для работы "${jobName}" успешно обновлена.`, 'Markdown', createMainMenuKeyboard());
                     }
                 } else {
                     const { error: insertEntryError } = await supabase
                         .from('entries')
-                        .insert([{ job_id: jobId, month: monthYear, salary, hours, user_id: userSupabaseId }]);
+                        .insert([{ job_id: jobId, month: monthYear, salary, hours }]);
                     if (insertEntryError) {
                         console.error('Error inserting entry:', insertEntryError);
                         await sendMessage(chatId, 'Произошла ошибка при добавлении записи.');
                     } else {
-                        await sendMessage(chatId, `Запись о зарплате за ${monthYear} для работы "${jobName}" успешно добавлена.`, 'Markdown', createMainMenuKeyboard(true));
+                        await sendMessage(chatId, `Запись о зарплате за ${monthYear} для работы "${jobName}" успешно добавлена.`, 'Markdown', createMainMenuKeyboard());
                     }
                 }
                 break;
 
             default:
-                await sendMessage(chatId, 'Неизвестная команда или действие. Выберите действие:', 'Markdown', createMainMenuKeyboard(isLoggedIn));
+                await sendMessage(chatId, 'Неизвестная команда или действие. Выберите действие:', 'Markdown', createMainMenuKeyboard());
                 break;
         }
 
