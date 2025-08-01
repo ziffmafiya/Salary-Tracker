@@ -575,12 +575,10 @@ class SalaryTracker {
     }
 
     async addSalaryEntry() {
-        console.log('addSalaryEntry called');
         const jobId = document.getElementById('jobSelect').value;
         const monthYearInput = document.getElementById('monthYearInput').value;
         const salary = parseFloat(document.getElementById('salary').value);
         const hours = parseFloat(document.getElementById('hours').value);
-        console.log('Form data:', { jobId, monthYearInput, salary, hours });
 
         const existingEntry = this.entries.find(entry =>
             entry.job_id === jobId && entry.month === monthYearInput
@@ -596,7 +594,6 @@ class SalaryTracker {
         if (error) {
             console.error('Error updating entry:', error);
         } else {
-            console.log('Entry updated successfully:', data[0]);
             const index = this.entries.findIndex(e => e.id === existingEntry.id);
                     this.entries[index] = { ...data[0], jobId: data[0].job_id }; // Add jobId
                 }
@@ -611,7 +608,6 @@ class SalaryTracker {
         if (error) {
             console.error('Error adding entry:', error);
         } else {
-            console.log('Entry added successfully:', data[0]);
             this.entries.push({ ...data[0], jobId: data[0].job_id }); // Add jobId
             this.currentJobId = jobId;
                 document.getElementById('viewJobSelect').value = jobId;
