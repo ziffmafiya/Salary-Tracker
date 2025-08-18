@@ -905,7 +905,7 @@ class SalaryTracker {
         // Update the UI
         document.getElementById('totalIncome').textContent = `${totalIncome.toFixed(2)} UAH`;
         document.getElementById('totalHours').textContent = `${totalHours.toFixed(2)}`;
-        document.getElementById('averageRate').textContent = `${averageRate.toFixed(2)} UAH/hour`;
+        document.getElementById('averageHourlyRate').textContent = `${averageRate.toFixed(2)} UAH/hour`;
 
         // Update the gear animation to indicate custom settings are applied
         const gearAnimation = document.getElementById('gearAnimation');
@@ -1154,7 +1154,7 @@ class SalaryTracker {
         document.getElementById('summaryText').textContent = 'No data available for analysis with current filters.';
         document.getElementById('totalIncome').textContent = '-';
         document.getElementById('totalHours').textContent = '-';
-        document.getElementById('averageRate').textContent = '-';
+        document.getElementById('averageHourlyRate').textContent = '-';
         document.getElementById('totalGrossIncome').textContent = '-';
         document.getElementById('avgMonthlyIncome').textContent = '-';
         document.getElementById('averageHourlyRate').textContent = '-';
@@ -1178,7 +1178,7 @@ class SalaryTracker {
         // Update all metric values
         document.getElementById('totalIncome').textContent = `${kpis.totalGrossIncome.toFixed(0)} UAH`;
         document.getElementById('totalHours').textContent = `${Object.values(sourceData).reduce((sum, data) => sum + data.totalHours, 0).toFixed(0)}`;
-        document.getElementById('averageRate').textContent = `${kpis.avgHourlyRate.toFixed(2)} UAH/hour`;
+        document.getElementById('averageHourlyRate').textContent = `${kpis.avgHourlyRate.toFixed(2)} UAH/hour`;
         document.getElementById('totalGrossIncome').textContent = `${kpis.totalGrossIncome.toFixed(0)} UAH`;
         document.getElementById('avgMonthlyIncome').textContent = `${kpis.avgMonthlyIncome.toFixed(0)} UAH`;
         document.getElementById('averageHourlyRate').textContent = `${kpis.avgHourlyRate.toFixed(2)} UAH/hour`;
