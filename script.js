@@ -1497,37 +1497,80 @@ class SalaryTracker {
         const firstJob = this.jobs.length > 0 ? this.jobs[0] : null;
         const userName = firstJob ? firstJob.name : '';
 
+        // Create income sources from jobs
+        const incomeSources = this.jobs.map(job => ({
+            id: job.id,
+            label: job.name
+        }));
+
         // Sort entries by date
         const sortedEntries = [...this.entries].sort((a, b) => a.month.localeCompare(b.month));
 
-        // Convert entries to export format
-        const records = sortedEntries.map(entry => {
-            const job = this.jobs.find(j => j.id === entry.jobId);
-            const [year, month] = entry.month.split('-');
-            const startDate = `${year}-${month}-01`;
-            const endDate = new Date(year, month, 0).toISOString().split('T')[0]; // Last day of month
+        // Group entries by month to create records with multiple income sources
+        const entriesByMonth = {};
+        sortedEntries.forEach(entry => {
+            if (!entriesByMonth[entry.month]) {
+                entriesByMonth[entry.month] = [];
+            }
+            entriesByMonth[entry.month].push(entry);
+        });
 
-            // Calculate taxes (approximate 15% of gross salary)
-            const taxesTotal = Math.round(entry.salary * 0.15);
+        // Convert grouped entries to export format
+        const records = Object.keys(entriesByMonth).sort().map(month => {
+            const [year, monthNum] = month.split('-');
+            const startDate = `${year}-${monthNum}-01`;
+            const endDate = new Date(year, monthNum, 0).toISOString().split('T')[0]; // Last day of month
+
+            const monthEntries = entriesByMonth[month];
+
+            // Create incomes array for this month
+            const incomes = monthEntries.map(entry => {
+                const job = this.jobs.find(j => j.id === entry.jobId);
+
+                // Split salary into base salary and potential bonus
+                // If salary is significantly higher than base rate, treat excess as bonus
+                let salaryGross = entry.salary;
+                let bonuses = 0;
+
+                if (job && job.baseRate && job.baseHours) {
+                    const expectedSalary = (job.baseRate / job.baseHours) * entry.hours;
+                    const threshold = expectedSalary * 1.1; // 10% threshold for bonus detection
+
+                    if (entry.salary > threshold) {
+                        bonuses = Math.round(entry.salary - expectedSalary);
+                        salaryGross = Math.round(expectedSalary);
+                    }
+                }
+
+                return {
+                    source_id: entry.jobId,
+                    salary_gross: salaryGross,
+                    bonuses: bonuses,
+                    other_income: 0,
+                    hours_worked: entry.hours
+                };
+            });
+
+            // Create notes with hours information
+            const notesArray = monthEntries.map(entry => {
+                const job = this.jobs.find(j => j.id === entry.jobId);
+                return job ? `${job.name}: ${entry.hours}ч` : `${entry.hours}ч`;
+            });
+            const notes = notesArray.length > 1 ? notesArray.join(', ') : '';
 
             return {
                 period_start: startDate,
                 period_end: endDate,
-                salary_gross: entry.salary,
-                bonuses: 0.0, // No bonus data in current system
-                other_income: 0.0, // No other income data
-                taxes_total: taxesTotal,
-                notes: job ? `Работа: ${job.name}, Часы: ${entry.hours}` : `Часы: ${entry.hours}`
+                incomes: incomes,
+                notes: notes
             };
         });
 
         // Calculate summary data
-        const periodStart = sortedEntries.length > 0 ? sortedEntries[0].month + '-01' : null;
-        const lastEntry = sortedEntries[sortedEntries.length - 1];
-        const [lastYear, lastMonth] = lastEntry.month.split('-');
-        const periodEnd = new Date(lastYear, lastMonth, 0).toISOString().split('T')[0];
+        const periodStart = records.length > 0 ? records[0].period_start : null;
+        const periodEnd = records.length > 0 ? records[records.length - 1].period_end : null;
 
-        // Create export object
+        // Create export object with new format
         const exportData = {
             person: {
                 id: null,
@@ -1537,6 +1580,7 @@ class SalaryTracker {
             },
             currency: 'UAH',
             period_granularity: 'monthly',
+            income_sources: incomeSources,
             records: records,
             export_summary: {
                 records_count: records.length,
@@ -1545,20 +1589,59 @@ class SalaryTracker {
                 exported_at: new Date().toISOString().replace('Z', '+03:00')
             },
             metadata: {
-                generated_by: 'Salary Tracker v1.0',
+                generated_by: 'Salary Tracker v1.3',
                 version: '1.0',
-                notes: 'Экспорт данных о зарплате'
+                notes: `Экспорт данных о зарплате с ${incomeSources.length} источник${incomeSources.length === 1 ? 'ом' : incomeSources.length < 5 ? 'ами' : 'ами'} дохода: ${incomeSources.map(s => s.label).join(', ')}`
             }
         };
 
+        // Create prompt text
+        const promptText = `Я присылаю JSON с данными по доходам за весь доступный период. В файле есть несколько источников дохода, перечисленных в поле income_sources, и в каждом месяце records[].incomes указаны суммы по source_id.
+
+Важно: в данных нет налогов и нет расходов — считай net_income = salary_gross + bonuses + other_income для каждого источника и периода.
+
+Проанализируй весь период и выдай подробный отчёт на русском со следующими разделами:
+
+1) Краткое резюме (2–4 предложения): общий average monthly net income и распределение между источниками (какой источник доминирует).
+
+2) KPI за весь период:
+- total_gross_income (всех источников)
+- total_net_income (тот же, так как налогов нет)
+- breakdown per source: total_by_source и share_of_total (в %)
+- average_monthly_net_income (всего) и per_source averages
+- volatility per source (stddev)
+- share_of_bonuses overall и per source
+
+3) Тренды:
+- income_trend overall: массив period(YYYY-MM) → total_net_income
+- income_trend per source: для каждого source_id массив period → net_income
+- определение тренда (рост/падение/стабильно) для каждого источника и в целом
+- выделение notable months (спайки/падения) и вероятные причины
+
+4) Корреляция между источниками (корр коэффициент): есть ли связь (например когда private падает, state растёт)
+
+5) Forecast: простая линейная проекция total и per source на 3 следующих периода (указать допущения)
+
+6) Рекомендации (6–12 пунктов), привязанные к источникам: как стабилизировать частный доход, как оптимально распределять бонусы, идеи для диверсификации или сохранения бонусов
+
+7) Data quality: перечисли пропущенные/неоднородные записи (например отсутствует запись для source_id в месяце) и предложи дополнительные поля (pay_date, income_type, contract_type)
+
+8) В конце — CSV-подобные таблицы с KPI и массивы для графиков:
+- total_income_trend (period,value)
+- per_source_trends: {source_id: [{period,value}, ...], ...}
+
+Вставь JSON ниже:
+
+`;
+
         // Create and download file
-        const jsonString = JSON.stringify(exportData, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
+        const jsonString = promptText + JSON.stringify(exportData, null, 2);
+        const blob = new Blob([jsonString], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
 
         const a = document.createElement('a');
         a.href = url;
-        a.download = `salary_export_${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `salary_export_${new Date().toISOString().split('T')[0]}.txt`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

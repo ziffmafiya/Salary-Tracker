@@ -1,0 +1,187 @@
+{
+  "person": {
+    "id": "user_001",
+    "name": "Максим",
+    "role": "Doctor",
+    "country": "Ukraine"
+  },
+  "currency": "UAH",
+  "period_granularity": "monthly",
+  "income_sources": [
+    {
+      "id": "state_ambulance",
+      "label": "Зарплата с скорой (гос.)"
+    },
+    {
+      "id": "yemets_center",
+      "label": "Емця (работа в центре)"
+    },
+    {
+      "id": "private_ambulance",
+      "label": "Частная скорая"
+    }
+  ],
+  "records": [
+    {
+      "period_start": "2024-07-01",
+      "period_end": "2024-07-31",
+      "incomes": [
+        {
+          "source_id": "state_ambulance",
+          "salary_gross": 25000,
+          "bonuses": 1000,
+          "other_income": 0
+        },
+        {
+          "source_id": "yemets_center",
+          "salary_gross": 8000,
+          "bonuses": 0,
+          "other_income": 0
+        },
+        {
+          "source_id": "private_ambulance",
+          "salary_gross": 7000,
+          "bonuses": 0,
+          "other_income": 0
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "period_start": "2024-08-01",
+      "period_end": "2024-08-31",
+      "incomes": [
+        {
+          "source_id": "state_ambulance",
+          "salary_gross": 26000,
+          "bonuses": 1000,
+          "other_income": 0
+        },
+        {
+          "source_id": "yemets_center",
+          "salary_gross": 8000,
+          "bonuses": 0,
+          "other_income": 0
+        },
+        {
+          "source_id": "private_ambulance",
+          "salary_gross": 8000,
+          "bonuses": 0,
+          "other_income": 0
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "period_start": "2024-09-01",
+      "period_end": "2024-09-30",
+      "incomes": [
+        {
+          "source_id": "state_ambulance",
+          "salary_gross": 24000,
+          "bonuses": 0,
+          "other_income": 0
+        },
+        {
+          "source_id": "yemets_center",
+          "salary_gross": 8000,
+          "bonuses": 0,
+          "other_income": 0
+        },
+        {
+          "source_id": "private_ambulance",
+          "salary_gross": 4000,
+          "bonuses": 0,
+          "other_income": 0
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "period_start": "2024-10-01",
+      "period_end": "2024-10-31",
+      "incomes": [
+        {
+          "source_id": "state_ambulance",
+          "salary_gross": 27000,
+          "bonuses": 2000,
+          "other_income": 0
+        },
+        {
+          "source_id": "yemets_center",
+          "salary_gross": 8000,
+          "bonuses": 0,
+          "other_income": 0
+        },
+        {
+          "source_id": "private_ambulance",
+          "salary_gross": 9000,
+          "bonuses": 0,
+          "other_income": 0
+        }
+      ],
+      "notes": "bonus month at state ambulance"
+    },
+    {
+      "period_start": "2024-11-01",
+      "period_end": "2024-11-30",
+      "incomes": [
+        {
+          "source_id": "state_ambulance",
+          "salary_gross": 26000,
+          "bonuses": 0,
+          "other_income": 0
+        },
+        {
+          "source_id": "yemets_center",
+          "salary_gross": 8000,
+          "bonuses": 0,
+          "other_income": 0
+        },
+        {
+          "source_id": "private_ambulance",
+          "salary_gross": 5000,
+          "bonuses": 0,
+          "other_income": 0
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "period_start": "2024-12-01",
+      "period_end": "2024-12-31",
+      "incomes": [
+        {
+          "source_id": "state_ambulance",
+          "salary_gross": 26500,
+          "bonuses": 1000,
+          "other_income": 0
+        },
+        {
+          "source_id": "yemets_center",
+          "salary_gross": 8000,
+          "bonuses": 0,
+          "other_income": 0
+        },
+        {
+          "source_id": "private_ambulance",
+          "salary_gross": 7000,
+          "bonuses": 0,
+          "other_income": 0
+        }
+      ],
+      "notes": ""
+    }
+  ],
+  "export_summary": {
+    "records_count": 6,
+    "period_covered_start": "2024-07-01",
+    "period_covered_end": "2024-12-31",
+    "exported_at": "2025-08-18T08:09:18+03:00"
+  },
+  "metadata": {
+    "generated_by": "salary-site v1.3",
+    "version": "1.0",
+    "notes": "пример с тремя источниками дохода: государственная скорая, Емця, частная скорая. Налоги и расходы отсутствуют."
+  }
+}
