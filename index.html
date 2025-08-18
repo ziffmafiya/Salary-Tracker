@@ -53,6 +53,63 @@
             </div>
         </header>
 
+        <!-- Income Analysis Section -->
+        <section class="analytics-section">
+            <div class="section-header">
+                <h2>Income Analysis</h2>
+                <div class="settings-gear" id="analysisSettingsBtn">
+                    <div id="gearAnimation"></div>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="analysis-summary" id="analysisSummary">
+                <h3>Summary</h3>
+                <p id="summaryText">Loading analysis...</p>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="kpi-section">
+                <h3>Key Performance Indicators</h3>
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Total Gross Income</div>
+                        <div class="kpi-value" id="totalGrossIncome">-</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Average Monthly Income</div>
+                        <div class="kpi-value" id="avgMonthlyIncome">-</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Dominant Source</div>
+                        <div class="kpi-value" id="dominantSource">-</div>
+                    </div>
+                </div>
+
+                <!-- Source Breakdown -->
+                <div class="source-breakdown" id="sourceBreakdown">
+                    <h4>Income by Source</h4>
+                    <div class="breakdown-grid" id="breakdownGrid">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trends Section -->
+            <div class="trends-section">
+                <h3>Income Trends</h3>
+                <div class="trend-analysis" id="trendAnalysis">
+                    <!-- Will be populated dynamically -->
+                </div>
+                <div class="notable-months" id="notableMonths">
+                    <h4>Notable Months</h4>
+                    <div class="notable-list" id="notableList">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- General Analytics Section -->
         <!-- General Analytics Section - Shows overall income statistics -->
         <section class="analytics-section">
@@ -206,6 +263,8 @@
         <div class="settings-container">
             <button id="jobSettingsBtn" class="settings-button">Job Settings</button>
             <button id="exportDataBtn" class="settings-button">Export Data</button>
+            <button id="importTestDataBtn" class="settings-button" style="background-color: #9C27B0;">Import Test
+                Data</button>
         </div>
     </div>
 

@@ -125,6 +125,7 @@ class SalaryTracker {
 
         this.updateSalaryHistory(); // Вызывается после инициализации analyticsSettings.includedJobs
         this.updateGeneralAnalytics();
+        this.updateIncomeAnalysis();
         this.updateBaseRatesInfo();
 
         // Set current job to first job if available
@@ -204,6 +205,16 @@ class SalaryTracker {
             this.populateAnalyticsSettingsModal();
             analyticsSettingsModal.style.display = 'block';
         });
+
+        // Analysis Settings Modal (reuse the same modal as analytics)
+        const analysisSettingsBtn = document.getElementById('analysisSettingsBtn');
+        if (analysisSettingsBtn) {
+            analysisSettingsBtn.addEventListener('click', () => {
+                console.log('Analysis Settings Button clicked!');
+                this.populateAnalyticsSettingsModal();
+                analyticsSettingsModal.style.display = 'block';
+            });
+        }
 
         // Close analytics settings modal
         analyticsSettingsModal.querySelector('.close-modal').addEventListener('click', () => {
@@ -299,6 +310,7 @@ class SalaryTracker {
                     this.entries = [];
                     this.updateSalaryHistory();
                     this.updateGeneralAnalytics();
+                    this.updateIncomeAnalysis();
                     this.updateChart();
                     this.updateStatistics();
                 }
@@ -370,6 +382,11 @@ class SalaryTracker {
         // Export data button
         document.getElementById('exportDataBtn').addEventListener('click', () => {
             this.exportData();
+        });
+
+        // Import test data button
+        document.getElementById('importTestDataBtn').addEventListener('click', () => {
+            this.importTestData();
         });
     }
 
@@ -573,6 +590,7 @@ class SalaryTracker {
             this.populateJobsList();
             this.updateSalaryHistory();
             this.updateGeneralAnalytics();
+            this.updateIncomeAnalysis();
             this.updateChart();
             this.updateStatistics();
             this.updateBaseRatesInfo();
@@ -618,6 +636,7 @@ class SalaryTracker {
                 document.getElementById('viewJobSelect').value = jobId;
                 this.updateSalaryHistory();
                 this.updateGeneralAnalytics();
+                this.updateIncomeAnalysis();
                 this.updateChart();
                 this.updateStatistics();
                 document.getElementById('salary').value = '';
@@ -911,6 +930,7 @@ class SalaryTracker {
             this.entries[index] = { ...data[0], jobId: data[0].job_id }; // Add jobId
             this.updateSalaryHistory();
             this.updateGeneralAnalytics();
+            this.updateIncomeAnalysis();
             this.updateChart();
             this.updateStatistics();
             document.getElementById('editEntryModal').style.display = 'none';
@@ -926,6 +946,7 @@ class SalaryTracker {
                 this.entries = this.entries.filter(entry => entry.id !== entryId);
                 this.updateSalaryHistory();
                 this.updateGeneralAnalytics();
+                this.updateIncomeAnalysis();
                 this.updateChart();
                 this.updateStatistics();
             }
@@ -991,6 +1012,312 @@ class SalaryTracker {
             summary += `Jobs: ${includedJobNames}\n`;
         }
         return summary;
+    }
+
+    // New income analysis function
+    updateIncomeAnalysis() {
+        // Show loading state
+        document.getElementById('summaryText').textContent = 'Analyzing income data...';
+        
+        const filteredEntries = this.getFilteredEntriesForAnalytics(this.analyticsSettings.period);
+        
+        if (filteredEntries.length === 0) {
+            this.displayEmptyAnalysis();
+            return;
+        }
+
+        // Group entries by source (job)
+        const sourceData = this.groupEntriesBySource(filteredEntries);
+        
+        // Calculate KPIs
+        const kpis = this.calculateKPIs(sourceData, filteredEntries);
+        
+        // Calculate trends
+        const trends = this.calculateTrends(sourceData);
+        
+        // Find notable months
+        const notableMonths = this.findNotableMonths(filteredEntries);
+        
+        // Update UI
+        this.displayAnalysisSummary(kpis, sourceData);
+        this.displayKPIs(kpis, sourceData);
+        this.displayTrends(trends);
+        this.displayNotableMonths(notableMonths);
+    }
+
+    groupEntriesBySource(entries) {
+        const sourceData = {};
+        
+        entries.forEach(entry => {
+            const job = this.jobs.find(j => j.id === entry.jobId);
+            if (!job) return;
+            
+            if (!sourceData[entry.jobId]) {
+                sourceData[entry.jobId] = {
+                    name: job.name,
+                    entries: [],
+                    totalIncome: 0,
+                    totalHours: 0
+                };
+            }
+            
+            sourceData[entry.jobId].entries.push(entry);
+            sourceData[entry.jobId].totalIncome += entry.salary;
+            sourceData[entry.jobId].totalHours += entry.hours;
+        });
+        
+        return sourceData;
+    }
+
+    calculateKPIs(sourceData, allEntries) {
+        const totalGrossIncome = allEntries.reduce((sum, entry) => sum + entry.salary, 0);
+        const totalNetIncome = totalGrossIncome; // No taxes in this system
+        
+        // Get unique months
+        const uniqueMonths = [...new Set(allEntries.map(entry => entry.month))];
+        const avgMonthlyIncome = uniqueMonths.length > 0 ? totalGrossIncome / uniqueMonths.length : 0;
+        
+        // Find dominant source
+        let dominantSource = null;
+        let maxIncome = 0;
+        
+        Object.entries(sourceData).forEach(([sourceId, data]) => {
+            if (data.totalIncome > maxIncome) {
+                maxIncome = data.totalIncome;
+                dominantSource = data.name;
+            }
+        });
+        
+        return {
+            totalGrossIncome,
+            totalNetIncome,
+            avgMonthlyIncome,
+            dominantSource,
+            monthsCount: uniqueMonths.length
+        };
+    }
+
+    calculateTrends(sourceData) {
+        const trends = {};
+        
+        Object.entries(sourceData).forEach(([sourceId, data]) => {
+            const monthlyData = {};
+            
+            // Group by month
+            data.entries.forEach(entry => {
+                if (!monthlyData[entry.month]) {
+                    monthlyData[entry.month] = 0;
+                }
+                monthlyData[entry.month] += entry.salary;
+            });
+            
+            const months = Object.keys(monthlyData).sort();
+            const values = months.map(month => monthlyData[month]);
+            
+            if (values.length < 2) {
+                trends[sourceId] = {
+                    name: data.name,
+                    direction: 'stable',
+                    change: 0,
+                    volatility: 0
+                };
+                return;
+            }
+            
+            // Calculate trend direction
+            const firstHalf = values.slice(0, Math.ceil(values.length / 2));
+            const secondHalf = values.slice(Math.floor(values.length / 2));
+            
+            const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+            const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+            
+            const change = ((secondAvg - firstAvg) / firstAvg) * 100;
+            
+            let direction = 'stable';
+            if (Math.abs(change) > 5) {
+                direction = change > 0 ? 'growing' : 'declining';
+            }
+            
+            // Calculate volatility (standard deviation)
+            const mean = values.reduce((a, b) => a + b, 0) / values.length;
+            const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+            const volatility = Math.sqrt(variance);
+            
+            trends[sourceId] = {
+                name: data.name,
+                direction,
+                change: Math.abs(change),
+                volatility,
+                avgIncome: mean
+            };
+        });
+        
+        return trends;
+    }
+
+    findNotableMonths(entries) {
+        const monthlyTotals = {};
+        
+        // Group by month
+        entries.forEach(entry => {
+            if (!monthlyTotals[entry.month]) {
+                monthlyTotals[entry.month] = 0;
+            }
+            monthlyTotals[entry.month] += entry.salary;
+        });
+        
+        const months = Object.keys(monthlyTotals).sort();
+        const values = Object.values(monthlyTotals);
+        
+        if (values.length < 3) return [];
+        
+        const mean = values.reduce((a, b) => a + b, 0) / values.length;
+        const stdDev = Math.sqrt(values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length);
+        
+        const notable = [];
+        
+        months.forEach(month => {
+            const value = monthlyTotals[month];
+            const deviation = Math.abs(value - mean) / stdDev;
+            
+            if (deviation > 1.5) { // More than 1.5 standard deviations
+                const change = ((value - mean) / mean) * 100;
+                const type = value > mean ? 'spike' : 'drop';
+                
+                // Try to find reason from notes or patterns
+                let reason = 'Unknown cause';
+                const monthEntries = entries.filter(e => e.month === month);
+                
+                // Check for bonus patterns
+                if (type === 'spike') {
+                    reason = 'Possible bonus or extra income';
+                } else {
+                    reason = 'Reduced income period';
+                }
+                
+                notable.push({
+                    month,
+                    value,
+                    change: Math.abs(change),
+                    type,
+                    reason
+                });
+            }
+        });
+        
+        return notable.sort((a, b) => b.change - a.change).slice(0, 5); // Top 5 most notable
+    }
+
+    displayEmptyAnalysis() {
+        document.getElementById('summaryText').textContent = 'No data available for analysis with current filters.';
+        document.getElementById('totalGrossIncome').textContent = '-';
+        document.getElementById('avgMonthlyIncome').textContent = '-';
+        document.getElementById('dominantSource').textContent = '-';
+        document.getElementById('breakdownGrid').innerHTML = '';
+        document.getElementById('trendAnalysis').innerHTML = '';
+        document.getElementById('notableList').innerHTML = '';
+    }
+
+    displayAnalysisSummary(kpis, sourceData) {
+        const sourceCount = Object.keys(sourceData).length;
+        const dominantShare = sourceCount > 0 ? 
+            (Math.max(...Object.values(sourceData).map(s => s.totalIncome)) / kpis.totalGrossIncome * 100).toFixed(1) : 0;
+        
+        const summaryText = `Over ${kpis.monthsCount} months, your average monthly net income is ${kpis.avgMonthlyIncome.toFixed(0)} UAH from ${sourceCount} income sources. ${kpis.dominantSource} dominates with ${dominantShare}% of total income, contributing most to your financial stability.`;
+        
+        document.getElementById('summaryText').textContent = summaryText;
+    }
+
+    displayKPIs(kpis, sourceData) {
+        document.getElementById('totalGrossIncome').textContent = `${kpis.totalGrossIncome.toFixed(0)} UAH`;
+        document.getElementById('avgMonthlyIncome').textContent = `${kpis.avgMonthlyIncome.toFixed(0)} UAH`;
+        document.getElementById('dominantSource').textContent = kpis.dominantSource || 'N/A';
+        
+        // Display source breakdown
+        const breakdownGrid = document.getElementById('breakdownGrid');
+        breakdownGrid.innerHTML = '';
+        
+        Object.entries(sourceData).forEach(([sourceId, data]) => {
+            const share = (data.totalIncome / kpis.totalGrossIncome * 100).toFixed(1);
+            const avgMonthly = data.entries.length > 0 ? (data.totalIncome / new Set(data.entries.map(e => e.month)).size).toFixed(0) : 0;
+            
+            const item = document.createElement('div');
+            item.className = 'breakdown-item';
+            item.innerHTML = `
+                <div>
+                    <div class="breakdown-source">${data.name}</div>
+                    <div class="breakdown-amount">${data.totalIncome.toFixed(0)} UAH <span class="breakdown-share">(${share}%)</span></div>
+                    <div class="breakdown-amount" style="font-size: 10px; color: #888;">Avg: ${avgMonthly} UAH/month</div>
+                </div>
+            `;
+            breakdownGrid.appendChild(item);
+        });
+    }
+
+    displayTrends(trends) {
+        const trendAnalysis = document.getElementById('trendAnalysis');
+        trendAnalysis.innerHTML = '';
+        
+        Object.entries(trends).forEach(([sourceId, trend]) => {
+            const item = document.createElement('div');
+            item.className = 'trend-item';
+            
+            let iconClass = 'stable';
+            let iconSymbol = '→';
+            if (trend.direction === 'growing') {
+                iconClass = 'up';
+                iconSymbol = '↗';
+            } else if (trend.direction === 'declining') {
+                iconClass = 'down';
+                iconSymbol = '↘';
+            }
+            
+            const trendText = trend.direction === 'stable' ? 'Stable' : 
+                `${trend.direction === 'growing' ? 'Growing' : 'Declining'} (${trend.change.toFixed(1)}%)`;
+            
+            item.innerHTML = `
+                <div class="trend-source">${trend.name}</div>
+                <div class="trend-direction">
+                    <span class="trend-icon ${iconClass}">${iconSymbol}</span>
+                    <span class="trend-text ${iconClass}">${trendText}</span>
+                </div>
+                <div class="trend-stats">
+                    Avg: ${trend.avgIncome.toFixed(0)} UAH/month<br>
+                    Volatility: ${trend.volatility.toFixed(0)} UAH
+                </div>
+            `;
+            trendAnalysis.appendChild(item);
+        });
+    }
+
+    displayNotableMonths(notableMonths) {
+        const notableList = document.getElementById('notableList');
+        notableList.innerHTML = '';
+        
+        if (notableMonths.length === 0) {
+            const item = document.createElement('div');
+            item.className = 'notable-item';
+            item.innerHTML = '<div class="notable-month">No significant variations detected</div>';
+            notableList.appendChild(item);
+            return;
+        }
+        
+        notableMonths.forEach(notable => {
+            const item = document.createElement('div');
+            item.className = 'notable-item';
+            
+            const date = new Date(notable.month + '-01');
+            const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            
+            item.innerHTML = `
+                <div>
+                    <div class="notable-month">${monthName}</div>
+                    <div class="notable-change">${notable.change.toFixed(1)}% ${notable.type}</div>
+                </div>
+                <div class="notable-reason">${notable.reason}</div>
+            `;
+            notableList.appendChild(item);
+        });
     }
 
     updateBaseRatesInfo() {
@@ -1373,6 +1700,7 @@ class SalaryTracker {
 
         // Update analytics immediately
         this.updateGeneralAnalytics();
+        this.updateIncomeAnalysis();
         this.updateChart(); // Also update the chart
         this.updateSalaryHistory(); // Also update the salary history
     }
@@ -1401,6 +1729,7 @@ class SalaryTracker {
 
         // Update analytics with new settings
         this.updateGeneralAnalytics();
+        this.updateIncomeAnalysis();
         this.updateChart(); // Also update the chart
     }
 
@@ -1630,6 +1959,92 @@ class SalaryTracker {
         URL.revokeObjectURL(url);
 
         console.log('Данные экспортированы:', exportData);
+    }
+
+    async importTestData() {
+        if (!confirm('This will import test data from the example JSON file. Continue?')) {
+            return;
+        }
+
+        try {
+            // Fetch the example JSON file
+            const response = await fetch('./salary_export_three_sources_example.json');
+            const testData = await response.json();
+
+            // Clear existing data
+            await this.supabase.from('entries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            await this.supabase.from('jobs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+            // Create jobs from income sources
+            const jobsToInsert = testData.income_sources.map(source => ({
+                name: source.label,
+                base_rate: 25000, // Default base rate
+                base_hours: 160   // Default base hours
+            }));
+
+            const { data: insertedJobs, error: jobsError } = await this.supabase
+                .from('jobs')
+                .insert(jobsToInsert)
+                .select();
+
+            if (jobsError) {
+                console.error('Error inserting jobs:', jobsError);
+                return;
+            }
+
+            // Create a mapping from source_id to job id
+            const sourceToJobMap = {};
+            testData.income_sources.forEach((source, index) => {
+                sourceToJobMap[source.id] = insertedJobs[index].id;
+            });
+
+            // Create entries from records
+            const entriesToInsert = [];
+            testData.records.forEach(record => {
+                const month = record.period_start.substring(0, 7); // YYYY-MM format
+                
+                record.incomes.forEach(income => {
+                    const jobId = sourceToJobMap[income.source_id];
+                    if (jobId) {
+                        entriesToInsert.push({
+                            job_id: jobId,
+                            month: month,
+                            salary: income.salary_gross + income.other_income,
+                            hours: 160 // Default hours
+                        });
+                    }
+                });
+            });
+
+            const { error: entriesError } = await this.supabase
+                .from('entries')
+                .insert(entriesToInsert);
+
+            if (entriesError) {
+                console.error('Error inserting entries:', entriesError);
+                return;
+            }
+
+            // Reload data and update UI
+            await this.loadData();
+            this.populateJobSelects();
+            this.populateChartViewSelect();
+            this.updateSalaryHistory();
+            this.updateGeneralAnalytics();
+            this.updateIncomeAnalysis();
+            this.updateChart();
+            this.updateBaseRatesInfo();
+
+            if (this.jobs.length > 0) {
+                this.currentJobId = this.jobs[0].id;
+                this.updateStatistics();
+            }
+
+            alert('Test data imported successfully!');
+        } catch (error) {
+            console.error('Error importing test data:', error);
+            alert('Error importing test data. Check console for details.');
+        }
     }
 }
 
