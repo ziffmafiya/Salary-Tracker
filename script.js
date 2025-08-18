@@ -118,7 +118,6 @@ class SalaryTracker {
         }
 
         this.setupEventListeners();
-        this.setupThemeToggle();
         this.populateJobSelects();
         this.populateChartViewSelect();
         this.setupChart();
@@ -138,62 +137,7 @@ class SalaryTracker {
     // This function is no longer needed as we won't be creating default jobs.
     // Users will add their own jobs.
     // setupDefaultJobs() { ... }
-    // Setup theme toggle functionality
-    setupThemeToggle() {
-        const themeToggle = document.getElementById('themeToggle');
-        const body = document.body;
 
-        // Load saved theme preference
-        const savedTheme = localStorage.getItem('salaryTrackerTheme') || 'dark';
-
-        // Apply saved theme
-        if (savedTheme === 'light') {
-            body.setAttribute('data-theme', 'light');
-            themeToggle.checked = true;
-        } else {
-            body.removeAttribute('data-theme');
-            themeToggle.checked = false;
-        }
-
-        // Theme toggle event listener
-        themeToggle.addEventListener('change', () => {
-            if (themeToggle.checked) {
-                // Switch to light theme
-                body.setAttribute('data-theme', 'light');
-                localStorage.setItem('salaryTrackerTheme', 'light');
-            } else {
-                // Switch to dark theme
-                body.removeAttribute('data-theme');
-                localStorage.setItem('salaryTrackerTheme', 'dark');
-            }
-
-            // Update chart colors if chart exists
-            if (this.chart) {
-                this.updateChartTheme();
-            }
-        });
-    }
-
-    // Update chart theme colors
-    updateChartTheme() {
-        const isDarkTheme = !document.body.hasAttribute('data-theme') || document.body.getAttribute('data-theme') === 'dark';
-
-        if (this.chart) {
-            // Update chart options for theme
-            this.chart.options.plugins.legend.labels.color = isDarkTheme ? '#F3F0F5' : '#0D0A0B';
-            this.chart.options.scales.x.ticks.color = isDarkTheme ? '#F3F0F5' : '#0D0A0B';
-            this.chart.options.scales.y.ticks.color = isDarkTheme ? '#F3F0F5' : '#0D0A0B';
-            this.chart.options.scales.x.grid.color = isDarkTheme ? '#272025' : '#f0ecf2';
-            this.chart.options.scales.y.grid.color = isDarkTheme ? '#272025' : '#f0ecf2';
-
-            // Update chart background
-            Chart.defaults.color = isDarkTheme ? '#F3F0F5' : '#0D0A0B';
-            Chart.defaults.borderColor = isDarkTheme ? '#272025' : '#f0ecf2';
-
-            // Update chart
-            this.chart.update();
-        }
-    }
     setupEventListeners() {
 
         // Analytics Settings Modal
@@ -1369,9 +1313,9 @@ class SalaryTracker {
     setupChart() {
         const ctx = document.getElementById('salaryChart').getContext('2d');
 
-        // Set up Chart.js with dark theme
-        Chart.defaults.color = '#e0e0e0';
-        Chart.defaults.borderColor = '#34495e';
+        // Set up Chart.js with light theme
+        Chart.defaults.color = '#0D0A0B';
+        Chart.defaults.borderColor = '#f0ecf2';
 
         this.chart = new Chart(ctx, {
             type: 'line',
@@ -1400,7 +1344,7 @@ class SalaryTracker {
 
                         },
                         grid: {
-                            color: '#2c3e50'
+                            color: '#f0ecf2'
                         },
                         ticks: {
                             autoSkip: true,
@@ -1417,7 +1361,7 @@ class SalaryTracker {
                             color: '#0D0A0B',
                         },
                         grid: {
-                            color: '#2c3e50'
+                            color: '#f0ecf2'
                         }
                     }
                 },
@@ -1431,10 +1375,10 @@ class SalaryTracker {
                         }
                     },
                     tooltip: {
-                        backgroundColor: '#34495e',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        borderColor: '#2c3e50',
+                        backgroundColor: '#ffffff',
+                        titleColor: '#0D0A0B',
+                        bodyColor: '#0D0A0B',
+                        borderColor: '#f0ecf2',
                         borderWidth: 1
                     }
                 }
