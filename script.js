@@ -1152,6 +1152,9 @@ class SalaryTracker {
 
     displayEmptyAnalysis() {
         document.getElementById('summaryText').textContent = 'No data available for analysis with current filters.';
+        document.getElementById('totalIncome').textContent = '-';
+        document.getElementById('totalHours').textContent = '-';
+        document.getElementById('averageRate').textContent = '-';
         document.getElementById('totalGrossIncome').textContent = '-';
         document.getElementById('avgMonthlyIncome').textContent = '-';
         document.getElementById('averageHourlyRate').textContent = '-';
@@ -1172,6 +1175,10 @@ class SalaryTracker {
     }
 
     displayKPIs(kpis, sourceData) {
+        // Update all metric values
+        document.getElementById('totalIncome').textContent = `${kpis.totalGrossIncome.toFixed(0)} UAH`;
+        document.getElementById('totalHours').textContent = `${Object.values(sourceData).reduce((sum, data) => sum + data.totalHours, 0).toFixed(0)}`;
+        document.getElementById('averageRate').textContent = `${kpis.avgHourlyRate.toFixed(2)} UAH/hour`;
         document.getElementById('totalGrossIncome').textContent = `${kpis.totalGrossIncome.toFixed(0)} UAH`;
         document.getElementById('avgMonthlyIncome').textContent = `${kpis.avgMonthlyIncome.toFixed(0)} UAH`;
         document.getElementById('averageHourlyRate').textContent = `${kpis.avgHourlyRate.toFixed(2)} UAH/hour`;
@@ -1185,13 +1192,11 @@ class SalaryTracker {
             const avgMonthly = data.entries.length > 0 ? (data.totalIncome / new Set(data.entries.map(e => e.month)).size).toFixed(0) : 0;
             
             const item = document.createElement('div');
-            item.className = 'breakdown-item';
+            item.className = 'source-item';
             item.innerHTML = `
-                <div>
-                    <div class="breakdown-source">${data.name}</div>
-                    <div class="breakdown-amount">${data.totalIncome.toFixed(0)} UAH <span class="breakdown-share">(${share}%)</span></div>
-                    <div class="breakdown-amount" style="font-size: 10px; color: #888;">Avg: ${avgMonthly} UAH/month</div>
-                </div>
+                <div class="source-name">${data.name}</div>
+                <div class="source-amount">${data.totalIncome.toFixed(0)} UAH <span class="source-share">(${share}%)</span></div>
+                <div class="source-details">Avg: ${avgMonthly} UAH/month</div>
             `;
             breakdownGrid.appendChild(item);
         });
@@ -1203,28 +1208,25 @@ class SalaryTracker {
         
         Object.entries(trends).forEach(([sourceId, trend]) => {
             const item = document.createElement('div');
-            item.className = 'trend-item';
+            item.className = 'trend-item-unified';
             
-            let iconClass = 'stable';
-            let iconSymbol = '→';
+            let iconSymbol = '➡️';
             if (trend.direction === 'growing') {
-                iconClass = 'up';
-                iconSymbol = '↗';
+                iconSymbol = '📈';
             } else if (trend.direction === 'declining') {
-                iconClass = 'down';
-                iconSymbol = '↘';
+                iconSymbol = '📉';
             }
             
             const trendText = trend.direction === 'stable' ? 'Stable' : 
                 `${trend.direction === 'growing' ? 'Growing' : 'Declining'} (${trend.change.toFixed(1)}%)`;
             
             item.innerHTML = `
-                <div class="trend-source">${trend.name}</div>
-                <div class="trend-direction">
-                    <span class="trend-icon ${iconClass}">${iconSymbol}</span>
-                    <span class="trend-text ${iconClass}">${trendText}</span>
+                <div class="trend-source-name">${trend.name}</div>
+                <div class="trend-direction-unified">
+                    <span class="trend-icon-unified">${iconSymbol}</span>
+                    <span class="trend-text-unified">${trendText}</span>
                 </div>
-                <div class="trend-stats">
+                <div class="trend-stats-unified">
                     Avg: ${trend.avgIncome.toFixed(0)} UAH/month<br>
                     Volatility: ${trend.volatility.toFixed(0)} UAH
                 </div>
@@ -1239,31 +1241,31 @@ class SalaryTracker {
         
         if (notableMonths.length === 0) {
             const item = document.createElement('div');
-            item.className = 'notable-item';
-            item.innerHTML = '<div class="notable-month">No significant variations detected</div>';
+            item.className = 'notable-item-unified';
+            item.innerHTML = '<div class="notable-month-unified">No significant variations detected</div>';
             notableList.appendChild(item);
             return;
         }
         
         notableMonths.forEach(notable => {
             const item = document.createElement('div');
-            item.className = 'notable-item';
+            item.className = 'notable-item-unified';
             
             const date = new Date(notable.month + '-01');
             const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
             
             item.innerHTML = `
                 <div>
-                    <div class="notable-month">${monthName}</div>
-                    <div class="notable-change">${notable.change.toFixed(1)}% ${notable.type}</div>
+                    <div class="notable-month-unified">${monthName}</div>
+                    <div class="notable-change-unified">${notable.change.toFixed(1)}% ${notable.type}</div>
                 </div>
-                <div class="notable-reason">${notable.reason}</div>
+                <div class="notable-reason-unified">${notable.reason}</div>
             `;
             notableList.appendChild(item);
         });
     }
 
-    // Calculate income forecast for next 3 months
+    // Calculate income forecast for next 3 months using polynomial regression
     calculateForecast(sourceData, allEntries) {
         const forecasts = {};
         const currentDate = new Date();
@@ -1294,68 +1296,246 @@ class SalaryTracker {
             const months = Object.keys(monthlyData).sort();
             const values = months.map(month => monthlyData[month]);
 
-            if (values.length < 2) {
-                // Not enough data for forecast
+            if (values.length < 3) {
+                // Not enough data for polynomial regression, use average
+                const avgValue = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
                 forecasts[sourceId] = {
                     name: data.name,
                     forecasts: forecastMonths.map(month => ({
                         month: month.key,
                         monthName: month.name,
-                        amount: 0,
+                        amount: avgValue,
                         confidence: 'low'
                     }))
                 };
                 return;
             }
 
-            // Simple linear regression
-            const n = values.length;
-            const xValues = Array.from({length: n}, (_, i) => i);
-            const yValues = values;
-
-            const sumX = xValues.reduce((a, b) => a + b, 0);
-            const sumY = yValues.reduce((a, b) => a + b, 0);
-            const sumXY = xValues.reduce((sum, x, i) => sum + x * yValues[i], 0);
-            const sumXX = xValues.reduce((sum, x) => sum + x * x, 0);
-
-            const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-            const intercept = (sumY - slope * sumX) / n;
-
-            // Calculate R-squared for confidence
-            const yMean = sumY / n;
-            const totalSumSquares = yValues.reduce((sum, y) => sum + Math.pow(y - yMean, 2), 0);
-            const residualSumSquares = yValues.reduce((sum, y, i) => {
-                const predicted = slope * i + intercept;
-                return sum + Math.pow(y - predicted, 2);
-            }, 0);
-            const rSquared = 1 - (residualSumSquares / totalSumSquares);
-
-            // Determine confidence level
-            let confidence = 'low';
-            if (rSquared > 0.7) confidence = 'high';
-            else if (rSquared > 0.4) confidence = 'medium';
-
-            // Generate forecasts
-            const sourceForecasts = forecastMonths.map((month, index) => {
-                const futureX = n + index;
-                const predictedAmount = Math.max(0, slope * futureX + intercept);
-                
-                return {
-                    month: month.key,
-                    monthName: month.name,
-                    amount: predictedAmount,
-                    confidence: confidence,
-                    trend: slope > 0 ? 'up' : slope < 0 ? 'down' : 'stable'
-                };
-            });
-
+            // Polynomial regression (degree 2) with seasonal adjustment
+            const forecast = this.calculatePolynomialForecast(values, months, forecastMonths);
+            
             forecasts[sourceId] = {
                 name: data.name,
-                forecasts: sourceForecasts
+                forecasts: forecast.predictions
             };
         });
 
         return { forecasts, forecastMonths };
+    }
+
+    // Polynomial regression implementation
+    calculatePolynomialForecast(values, historicalMonths, forecastMonths) {
+        const n = values.length;
+        
+        // Create time series data points (independent months)
+        const dataPoints = values.map((value, index) => ({
+            x: index,
+            y: value,
+            month: historicalMonths[index]
+        }));
+
+        // Calculate seasonal patterns (month-of-year effect)
+        const seasonalPattern = this.calculateSeasonalPattern(dataPoints);
+        
+        // Fit polynomial regression (degree 2)
+        const coefficients = this.fitPolynomial(dataPoints, 2);
+        
+        // Calculate R-squared for confidence assessment
+        const rSquared = this.calculateRSquared(dataPoints, coefficients);
+        
+        // Determine confidence level
+        let confidence = 'low';
+        if (rSquared > 0.8) confidence = 'high';
+        else if (rSquared > 0.5) confidence = 'medium';
+
+        // Generate predictions for future months
+        const predictions = forecastMonths.map((month, index) => {
+            const futureX = n + index;
+            
+            // Base polynomial prediction
+            let predictedAmount = this.evaluatePolynomial(coefficients, futureX);
+            
+            // Apply seasonal adjustment
+            const monthOfYear = new Date(month.key + '-01').getMonth();
+            const seasonalMultiplier = seasonalPattern[monthOfYear] || 1.0;
+            predictedAmount *= seasonalMultiplier;
+            
+            // Add some randomness to reflect independence of months
+            const volatility = this.calculateVolatility(values);
+            const randomFactor = 1 + (Math.random() - 0.5) * 0.1 * (volatility / Math.max(...values));
+            predictedAmount *= randomFactor;
+            
+            // Ensure non-negative values
+            predictedAmount = Math.max(0, predictedAmount);
+            
+            // Determine trend direction
+            const trend = this.determineTrend(coefficients, futureX);
+            
+            return {
+                month: month.key,
+                monthName: month.name,
+                amount: predictedAmount,
+                confidence: confidence,
+                trend: trend
+            };
+        });
+
+        return { predictions, rSquared, coefficients };
+    }
+
+    // Calculate seasonal patterns based on month-of-year
+    calculateSeasonalPattern(dataPoints) {
+        const monthlyTotals = {};
+        const monthlyCounts = {};
+        
+        // Group by month of year (0-11)
+        dataPoints.forEach(point => {
+            const monthOfYear = new Date(point.month + '-01').getMonth();
+            if (!monthlyTotals[monthOfYear]) {
+                monthlyTotals[monthOfYear] = 0;
+                monthlyCounts[monthOfYear] = 0;
+            }
+            monthlyTotals[monthOfYear] += point.y;
+            monthlyCounts[monthOfYear]++;
+        });
+        
+        // Calculate average for each month
+        const monthlyAverages = {};
+        for (let month = 0; month < 12; month++) {
+            if (monthlyCounts[month] > 0) {
+                monthlyAverages[month] = monthlyTotals[month] / monthlyCounts[month];
+            }
+        }
+        
+        // Calculate overall average
+        const overallAverage = Object.values(monthlyAverages).reduce((a, b) => a + b, 0) / Object.keys(monthlyAverages).length;
+        
+        // Create seasonal multipliers
+        const seasonalPattern = {};
+        for (let month = 0; month < 12; month++) {
+            if (monthlyAverages[month]) {
+                seasonalPattern[month] = monthlyAverages[month] / overallAverage;
+            } else {
+                seasonalPattern[month] = 1.0; // Default multiplier
+            }
+        }
+        
+        return seasonalPattern;
+    }
+
+    // Fit polynomial regression using least squares
+    fitPolynomial(dataPoints, degree) {
+        const n = dataPoints.length;
+        const matrix = [];
+        const vector = [];
+        
+        // Create normal equations matrix
+        for (let i = 0; i <= degree; i++) {
+            matrix[i] = [];
+            let sum = 0;
+            
+            for (let j = 0; j <= degree; j++) {
+                let matrixSum = 0;
+                for (let k = 0; k < n; k++) {
+                    matrixSum += Math.pow(dataPoints[k].x, i + j);
+                }
+                matrix[i][j] = matrixSum;
+            }
+            
+            for (let k = 0; k < n; k++) {
+                sum += dataPoints[k].y * Math.pow(dataPoints[k].x, i);
+            }
+            vector[i] = sum;
+        }
+        
+        // Solve using Gaussian elimination
+        return this.gaussianElimination(matrix, vector);
+    }
+
+    // Gaussian elimination solver
+    gaussianElimination(matrix, vector) {
+        const n = matrix.length;
+        
+        // Forward elimination
+        for (let i = 0; i < n; i++) {
+            // Find pivot
+            let maxRow = i;
+            for (let k = i + 1; k < n; k++) {
+                if (Math.abs(matrix[k][i]) > Math.abs(matrix[maxRow][i])) {
+                    maxRow = k;
+                }
+            }
+            
+            // Swap rows
+            [matrix[i], matrix[maxRow]] = [matrix[maxRow], matrix[i]];
+            [vector[i], vector[maxRow]] = [vector[maxRow], vector[i]];
+            
+            // Make all rows below this one 0 in current column
+            for (let k = i + 1; k < n; k++) {
+                const factor = matrix[k][i] / matrix[i][i];
+                vector[k] -= factor * vector[i];
+                for (let j = i; j < n; j++) {
+                    matrix[k][j] -= factor * matrix[i][j];
+                }
+            }
+        }
+        
+        // Back substitution
+        const solution = new Array(n);
+        for (let i = n - 1; i >= 0; i--) {
+            solution[i] = vector[i];
+            for (let j = i + 1; j < n; j++) {
+                solution[i] -= matrix[i][j] * solution[j];
+            }
+            solution[i] /= matrix[i][i];
+        }
+        
+        return solution;
+    }
+
+    // Evaluate polynomial at given x
+    evaluatePolynomial(coefficients, x) {
+        let result = 0;
+        for (let i = 0; i < coefficients.length; i++) {
+            result += coefficients[i] * Math.pow(x, i);
+        }
+        return result;
+    }
+
+    // Calculate R-squared
+    calculateRSquared(dataPoints, coefficients) {
+        const yMean = dataPoints.reduce((sum, point) => sum + point.y, 0) / dataPoints.length;
+        
+        let totalSumSquares = 0;
+        let residualSumSquares = 0;
+        
+        dataPoints.forEach(point => {
+            const predicted = this.evaluatePolynomial(coefficients, point.x);
+            totalSumSquares += Math.pow(point.y - yMean, 2);
+            residualSumSquares += Math.pow(point.y - predicted, 2);
+        });
+        
+        return 1 - (residualSumSquares / totalSumSquares);
+    }
+
+    // Calculate volatility (standard deviation)
+    calculateVolatility(values) {
+        const mean = values.reduce((a, b) => a + b, 0) / values.length;
+        const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+        return Math.sqrt(variance);
+    }
+
+    // Determine trend direction based on polynomial derivative
+    determineTrend(coefficients, x) {
+        // Calculate derivative at point x
+        let derivative = 0;
+        for (let i = 1; i < coefficients.length; i++) {
+            derivative += i * coefficients[i] * Math.pow(x, i - 1);
+        }
+        
+        if (derivative > 0.01) return 'up';
+        if (derivative < -0.01) return 'down';
+        return 'stable';
     }
 
     displayForecast(forecastData) {
@@ -1364,8 +1544,8 @@ class SalaryTracker {
 
         if (!forecastData || Object.keys(forecastData.forecasts).length === 0) {
             const item = document.createElement('div');
-            item.className = 'forecast-item';
-            item.innerHTML = '<div class="forecast-month">No data available for forecast</div>';
+            item.className = 'forecast-item-unified';
+            item.innerHTML = '<div class="forecast-month-unified">No data available for forecast</div>';
             forecastGrid.appendChild(item);
             return;
         }
@@ -1383,23 +1563,23 @@ class SalaryTracker {
             const avgConfidence = this.calculateAverageConfidence(Object.values(forecasts), month.key);
 
             const item = document.createElement('div');
-            item.className = 'forecast-item overall';
+            item.className = 'forecast-item-unified overall';
 
             const trendIcon = this.getTrendIcon(totalForecast, month.key, forecasts);
 
             item.innerHTML = `
-                <div class="forecast-trend">${trendIcon}</div>
-                <div class="forecast-month">${month.name}</div>
-                <div class="forecast-amount">${totalForecast.toFixed(0)} UAH</div>
-                <div class="forecast-confidence">
-                    <span class="confidence-indicator ${avgConfidence}"></span>
+                <div class="forecast-trend-unified">${trendIcon}</div>
+                <div class="forecast-month-unified">${month.name}</div>
+                <div class="forecast-amount-unified">${totalForecast.toFixed(0)} UAH</div>
+                <div class="forecast-confidence-unified">
+                    <span class="confidence-indicator-unified ${avgConfidence}"></span>
                     Confidence: ${avgConfidence}
                 </div>
-                <div class="forecast-breakdown">
+                <div class="forecast-breakdown-unified">
                     ${Object.values(forecasts).map(source => {
                         const monthForecast = source.forecasts.find(f => f.month === month.key);
                         const amount = monthForecast ? monthForecast.amount : 0;
-                        return `<div class="forecast-source">
+                        return `<div class="forecast-source-unified">
                             <span>${source.name}</span>
                             <span>${amount.toFixed(0)} UAH</span>
                         </div>`;
