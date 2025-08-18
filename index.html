@@ -44,11 +44,13 @@
         <h1>Salary Tracker</h1>
     </header>
 
-    <!-- Income Analysis Section -->
+    <!-- General Analytics Section -->
+    <!-- General Analytics Section - Shows overall income statistics and analysis -->
     <section class="analytics-section">
         <div class="section-header">
-            <h2>Income Analysis</h2>
-            <div class="settings-gear" id="analysisSettingsBtn">
+            <h2>General Analytics</h2>
+            <!-- Settings button with animated gear icon -->
+            <div class="settings-gear" id="analyticsSettingsBtn">
                 <div id="gearAnimation"></div>
             </div>
         </div>
@@ -57,6 +59,22 @@
         <div class="analysis-summary" id="analysisSummary">
             <h3>Summary</h3>
             <p id="summaryText">Loading analysis...</p>
+        </div>
+
+        <!-- Basic Analytics Cards -->
+        <div class="analytics-grid">
+            <div class="analytics-card">
+                <div class="card-label">Total Income</div>
+                <div class="card-value" id="totalIncome">54944.88 UAH</div>
+            </div>
+            <div class="analytics-card">
+                <div class="card-label">Total Hours</div>
+                <div class="card-value" id="totalHours">864.00</div>
+            </div>
+            <div class="analytics-card">
+                <div class="card-label">Average Rate</div>
+                <div class="card-value" id="averageRate">63.59 UAH/hour</div>
+            </div>
         </div>
 
         <!-- KPI Cards -->
@@ -108,33 +126,6 @@
             </div>
             <div class="forecast-grid" id="forecastGrid">
                 <!-- Will be populated dynamically -->
-            </div>
-        </div>
-    </section>
-
-    <!-- General Analytics Section -->
-    <!-- General Analytics Section - Shows overall income statistics -->
-    <section class="analytics-section">
-        <div class="section-header">
-            <h2>General Analytics</h2>
-            <!-- Settings button with animated gear icon -->
-            <div class="settings-gear" id="analyticsSettingsBtn">
-                <div id="gearAnimation"></div>
-            </div>
-        </div>
-        <!-- Analytics cards displaying key metrics -->
-        <div class="analytics-grid">
-            <div class="analytics-card">
-                <div class="card-label">Total Income</div>
-                <div class="card-value" id="totalIncome">54944.88 UAH</div>
-            </div>
-            <div class="analytics-card">
-                <div class="card-label">Total Hours</div>
-                <div class="card-value" id="totalHours">864.00</div>
-            </div>
-            <div class="analytics-card">
-                <div class="card-label">Average Rate</div>
-                <div class="card-value" id="averageRate">63.59 UAH/hour</div>
             </div>
         </div>
     </section>

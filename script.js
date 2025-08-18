@@ -150,15 +150,7 @@ class SalaryTracker {
             analyticsSettingsModal.style.display = 'block';
         });
 
-        // Analysis Settings Modal (reuse the same modal as analytics)
-        const analysisSettingsBtn = document.getElementById('analysisSettingsBtn');
-        if (analysisSettingsBtn) {
-            analysisSettingsBtn.addEventListener('click', () => {
-                console.log('Analysis Settings Button clicked!');
-                this.populateAnalyticsSettingsModal();
-                analyticsSettingsModal.style.display = 'block';
-            });
-        }
+
 
         // Close analytics settings modal
         analyticsSettingsModal.querySelector('.close-modal').addEventListener('click', () => {
