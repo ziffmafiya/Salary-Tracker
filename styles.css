@@ -13,10 +13,29 @@ body {
     line-height: 1.6;
 }
 
+.sticky-header {
+    position: sticky;
+    top: 0;
+    background-color: #FFFFFF;
+    padding: 10px 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
 .dashboard-layout {
     display: grid;
     grid-template-columns: 70fr 30fr;
     gap: 20px;
+    padding-top: 20px;
 }
 
 .main-content {
@@ -895,8 +914,33 @@ h3 {
 
 .chart-controls {
     display: flex;
-    flex-direction: column;
-    gap: 15px;
+    gap: 10px;
+}
+
+.toggle-buttons {
+    display: flex;
+}
+
+.toggle-btn {
+    padding: 8px 12px;
+    border: 1px solid #D1D5DB;
+    background-color: #FFFFFF;
+    color: #1F2937;
+    cursor: pointer;
+}
+
+.toggle-btn.active {
+    background-color: #4A55E1;
+    color: #FFFFFF;
+    border-color: #4A55E1;
+}
+
+.toggle-btn:first-child {
+    border-radius: 8px 0 0 8px;
+}
+
+.toggle-btn:last-child {
+    border-radius: 0 8px 8px 0;
 }
 
 .chart-control-group {
@@ -1211,6 +1255,13 @@ button[type="submit"] {
     margin-bottom: 20px;
 }
 
+#table-filter {
+    padding: 8px 12px;
+    border: 1px solid #D1D5DB;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -1493,13 +1544,17 @@ tbody tr:nth-child(even) {
     pointer-events: auto;
 }
 
-footer {
-    margin-top: 30px;
-    padding: 15px;
-    background-color: #111111;
-    color: #cccccc;
-    text-align: center;
-    border-radius: 5px;
+.app-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #FFFFFF;
+    padding: 10px 20px;
+    box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
 }
 
 .base-info {

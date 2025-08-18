@@ -320,7 +320,36 @@ class SalaryTracker {
             this.exportData();
         });
 
+        // Chart controls
+        document.getElementById('chart-time-range').addEventListener('change', (e) => {
+            this.monthlyIncomeSettings.period = e.target.value;
+            this.updateChart();
+        });
 
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.chart.config.type = e.target.dataset.chartType;
+                this.updateChart();
+            });
+        });
+
+        // Table filter
+        document.getElementById('table-filter').addEventListener('input', () => {
+            this.updateSalaryHistory();
+        });
+
+        // Table sorting
+        document.querySelectorAll('#salaryHistoryTable th[data-sort]').forEach(th => {
+            th.addEventListener('click', () => {
+                const sortBy = th.dataset.sort;
+                const sortOrder = th.dataset.order === 'asc' ? 'desc' : 'asc';
+                document.querySelectorAll('#salaryHistoryTable th[data-sort]').forEach(th => th.removeAttribute('data-order'));
+                th.dataset.order = sortOrder;
+                this.updateSalaryHistory(sortBy, sortOrder);
+            });
+        });
     }
 
     populateJobSelects() {
@@ -678,15 +707,66 @@ class SalaryTracker {
         differenceElement.setAttribute('data-tooltip', `Base salary proportional to hours worked this month: ${baseSalaryForHours.toFixed(2)} UAH`);
     }
 
-    updateSalaryHistory() {
+    updateSalaryHistory(sortBy = 'month', sortOrder = 'desc') {
         const tableBody = document.querySelector('#salaryHistoryTable tbody');
         tableBody.innerHTML = '';
 
-        // Get filtered entries based on analytics settings
-        const filteredEntries = this.getFilteredEntriesForAnalytics(this.analyticsSettings.period);
+        let filteredEntries = this.getFilteredEntriesForAnalytics();
 
-        // Sort entries by month (newest first)
-        filteredEntries.sort((a, b) => b.month.localeCompare(a.month));
+        // Filter by text input
+        const filterText = document.getElementById('table-filter').value.toLowerCase();
+        if (filterText) {
+            filteredEntries = filteredEntries.filter(entry => {
+                const job = this.jobs.find(j => j.id === entry.jobId);
+                return (
+                    entry.month.toLowerCase().includes(filterText) ||
+                    (job && job.name.toLowerCase().includes(filterText)) ||
+                    entry.salary.toString().includes(filterText) ||
+                    entry.hours.toString().includes(filterText)
+                );
+            });
+        }
+
+        // Sort entries
+        filteredEntries.sort((a, b) => {
+            let valA, valB;
+            const jobA = this.jobs.find(j => j.id === a.jobId);
+            const jobB = this.jobs.find(j => j.id === b.jobId);
+
+            switch (sortBy) {
+                case 'month':
+                    valA = a.month;
+                    valB = b.month;
+                    break;
+                case 'job':
+                    valA = jobA ? jobA.name : '';
+                    valB = jobB ? jobB.name : '';
+                    break;
+                case 'salary':
+                    valA = a.salary;
+                    valB = b.salary;
+                    break;
+                case 'hours':
+                    valA = a.hours;
+                    valB = b.hours;
+                    break;
+                case 'hourlyRate':
+                    valA = a.salary / a.hours;
+                    valB = b.salary / b.hours;
+                    break;
+                default:
+                    valA = a.month;
+                    valB = b.month;
+            }
+
+            if (valA < valB) {
+                return sortOrder === 'asc' ? -1 : 1;
+            }
+            if (valA > valB) {
+                return sortOrder === 'asc' ? 1 : -1;
+            }
+            return 0;
+        });
 
         // Group entries by job for calculating percentage changes
         const entriesByJob = {};
@@ -860,40 +940,32 @@ class SalaryTracker {
     }
 
     updateGeneralAnalytics() {
-        // Use the analytics settings filter instead of the chart period filter
-        const filteredEntries = this.getFilteredEntriesForAnalytics(this.analyticsSettings.period);
+        const kpiGrid = document.getElementById('kpi-grid');
+        kpiGrid.innerHTML = ''; // Clear existing cards
 
-        // Calculate total income and hours
-        let totalIncome = 0;
-        let totalHours = 0;
+        const filteredEntries = this.getFilteredEntriesForAnalytics();
+        const totalIncome = filteredEntries.reduce((sum, entry) => sum + entry.salary, 0);
+        const totalHours = filteredEntries.reduce((sum, entry) => sum + entry.hours, 0);
+        const uniqueMonths = [...new Set(filteredEntries.map(entry => entry.month))];
+        const avgMonthlyIncome = uniqueMonths.length > 0 ? totalIncome / uniqueMonths.length : 0;
+        const avgHourlyRate = totalHours > 0 ? totalIncome / totalHours : 0;
 
-        filteredEntries.forEach(entry => {
-            totalIncome += entry.salary;
-            totalHours += entry.hours;
+        const kpis = [
+            { label: 'Total Income', value: `${totalIncome.toFixed(2)} UAH`, icon: '💰' },
+            { label: 'Avg Monthly Income', value: `${avgMonthlyIncome.toFixed(2)} UAH`, icon: '📅' },
+            { label: 'Avg Hourly Rate', value: `${avgHourlyRate.toFixed(2)} UAH/h`, icon: '⏰' },
+            { label: 'Total Hours', value: `${totalHours.toFixed(2)}`, icon: '💪' }
+        ];
+
+        kpis.forEach(kpi => {
+            const card = document.createElement('div');
+            card.className = 'metric-item';
+            card.innerHTML = `
+                <div class="metric-label">${kpi.icon} ${kpi.label}</div>
+                <div class="metric-value">${kpi.value}</div>
+            `;
+            kpiGrid.appendChild(card);
         });
-
-        // Calculate average hourly rate
-        const averageRate = totalHours > 0 ? totalIncome / totalHours : 0;
-
-        // Update the UI
-        document.getElementById('totalIncome').textContent = `${totalIncome.toFixed(2)} UAH`;
-        document.getElementById('totalHours').textContent = `${totalHours.toFixed(2)}`;
-        document.getElementById('averageHourlyRate').textContent = `${averageRate.toFixed(2)} UAH/hour`;
-
-        // Update the gear animation to indicate custom settings are applied
-        const gearAnimation = document.getElementById('gearAnimation');
-        const hasCustomSettings = this.analyticsSettings.includedJobs.length < this.jobs.length ||
-            this.analyticsSettings.period !== 'all';
-
-        if (hasCustomSettings) {
-            gearAnimation.classList.add('active-settings');
-
-            // Add tooltip to show current settings
-            gearAnimation.setAttribute('data-tooltip', this.getAnalyticsSummary());
-        } else {
-            gearAnimation.classList.remove('active-settings');
-            gearAnimation.removeAttribute('data-tooltip');
-        }
     }
 
     // Helper to get a summary of current analytics settings for tooltip
