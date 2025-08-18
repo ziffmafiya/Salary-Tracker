@@ -1510,6 +1510,24 @@ class SalaryTracker {
         return '➡️';
     }
 
+    // Helper function to calculate moving average
+    calculateMovingAverage(data, windowSize) {
+        if (data.length < windowSize) {
+            return new Array(data.length).fill(null); // Not enough data
+        }
+        const movingAverage = [];
+        for (let i = 0; i < data.length; i++) {
+            if (i < windowSize - 1) {
+                movingAverage.push(null); // Fill initial points with null
+            } else {
+                const window = data.slice(i - windowSize + 1, i + 1);
+                const average = window.reduce((sum, val) => sum + val, 0) / windowSize;
+                movingAverage.push(average);
+            }
+        }
+        return movingAverage;
+    }
+
     updateBaseRatesInfo() {
         const container = document.getElementById('baseRatesContainer');
         container.innerHTML = '';
@@ -1699,6 +1717,21 @@ class SalaryTracker {
             pointRadius: 6,
             pointHoverRadius: 8,
             pointBackgroundColor: colors[0]
+        });
+
+        // Add Moving Average line
+        const movingAverageData = this.calculateMovingAverage(chartData, 3);
+        this.chart.data.datasets.push({
+            label: 'Moving Average (3-month)',
+            data: movingAverageData,
+            borderColor: '#FF9800', // Orange
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: false,
+            pointRadius: 0,
+            pointHoverRadius: 0,
+            borderDash: [5, 5], // Dashed line
         });
 
         // Add base salary line if chart type is 'salary'
