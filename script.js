@@ -384,10 +384,7 @@ class SalaryTracker {
             this.exportData();
         });
 
-        // Import test data button
-        document.getElementById('importTestDataBtn').addEventListener('click', () => {
-            this.importTestData();
-        });
+
     }
 
     populateJobSelects() {
@@ -1966,91 +1963,7 @@ class SalaryTracker {
         console.log('Данные экспортированы:', exportData);
     }
 
-    async importTestData() {
-        if (!confirm('This will import test data from the example JSON file. Continue?')) {
-            return;
-        }
 
-        try {
-            // Fetch the example JSON file
-            const response = await fetch('./salary_export_three_sources_example.json');
-            const testData = await response.json();
-
-            // Clear existing data
-            await this.supabase.from('entries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-            await this.supabase.from('jobs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-
-            // Create jobs from income sources
-            const jobsToInsert = testData.income_sources.map(source => ({
-                name: source.label,
-                base_rate: 25000, // Default base rate
-                base_hours: 160   // Default base hours
-            }));
-
-            const { data: insertedJobs, error: jobsError } = await this.supabase
-                .from('jobs')
-                .insert(jobsToInsert)
-                .select();
-
-            if (jobsError) {
-                console.error('Error inserting jobs:', jobsError);
-                return;
-            }
-
-            // Create a mapping from source_id to job id
-            const sourceToJobMap = {};
-            testData.income_sources.forEach((source, index) => {
-                sourceToJobMap[source.id] = insertedJobs[index].id;
-            });
-
-            // Create entries from records
-            const entriesToInsert = [];
-            testData.records.forEach(record => {
-                const month = record.period_start.substring(0, 7); // YYYY-MM format
-                
-                record.incomes.forEach(income => {
-                    const jobId = sourceToJobMap[income.source_id];
-                    if (jobId) {
-                        entriesToInsert.push({
-                            job_id: jobId,
-                            month: month,
-                            salary: income.salary_gross + income.other_income,
-                            hours: 160 // Default hours
-                        });
-                    }
-                });
-            });
-
-            const { error: entriesError } = await this.supabase
-                .from('entries')
-                .insert(entriesToInsert);
-
-            if (entriesError) {
-                console.error('Error inserting entries:', entriesError);
-                return;
-            }
-
-            // Reload data and update UI
-            await this.loadData();
-            this.populateJobSelects();
-            this.populateChartViewSelect();
-            this.updateSalaryHistory();
-            this.updateGeneralAnalytics();
-            this.updateIncomeAnalysis();
-            this.updateChart();
-            this.updateBaseRatesInfo();
-
-            if (this.jobs.length > 0) {
-                this.currentJobId = this.jobs[0].id;
-                this.updateStatistics();
-            }
-
-            alert('Test data imported successfully!');
-        } catch (error) {
-            console.error('Error importing test data:', error);
-            alert('Error importing test data. Check console for details.');
-        }
-    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

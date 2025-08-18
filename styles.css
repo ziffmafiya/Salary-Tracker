@@ -120,7 +120,7 @@ h3 {
 }
 
 .kpi-label {
-    color: #cccccc;
+    color: rgb(13, 10, 11);
     font-size: 12px;
     margin-bottom: 8px;
     text-transform: uppercase;
@@ -818,13 +818,7 @@ td {
     background-color: #1976D2;
 }
 
-#importTestDataBtn {
-    background-color: #9C27B0;
-}
 
-#importTestDataBtn:hover {
-    background-color: #7B1FA2;
-}
 
 /* Modal */
 .modal {
