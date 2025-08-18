@@ -1525,27 +1525,9 @@ class SalaryTracker {
 
             // Create incomes array for this month
             const incomes = monthEntries.map(entry => {
-                const job = this.jobs.find(j => j.id === entry.jobId);
-
-                // Split salary into base salary and potential bonus
-                // If salary is significantly higher than base rate, treat excess as bonus
-                let salaryGross = entry.salary;
-                let bonuses = 0;
-
-                if (job && job.baseRate && job.baseHours) {
-                    const expectedSalary = (job.baseRate / job.baseHours) * entry.hours;
-                    const threshold = expectedSalary * 1.1; // 10% threshold for bonus detection
-
-                    if (entry.salary > threshold) {
-                        bonuses = Math.round(entry.salary - expectedSalary);
-                        salaryGross = Math.round(expectedSalary);
-                    }
-                }
-
                 return {
                     source_id: entry.jobId,
-                    salary_gross: salaryGross,
-                    bonuses: bonuses,
+                    salary_gross: entry.salary,
                     other_income: 0,
                     hours_worked: entry.hours
                 };

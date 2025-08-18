@@ -29,19 +29,16 @@
         {
           "source_id": "state_ambulance",
           "salary_gross": 25000,
-          "bonuses": 1000,
           "other_income": 0
         },
         {
           "source_id": "yemets_center",
           "salary_gross": 8000,
-          "bonuses": 0,
           "other_income": 0
         },
         {
           "source_id": "private_ambulance",
           "salary_gross": 7000,
-          "bonuses": 0,
           "other_income": 0
         }
       ],
@@ -54,19 +51,19 @@
         {
           "source_id": "state_ambulance",
           "salary_gross": 26000,
-          "bonuses": 1000,
+            
           "other_income": 0
         },
         {
           "source_id": "yemets_center",
           "salary_gross": 8000,
-          "bonuses": 0,
+             
           "other_income": 0
         },
         {
           "source_id": "private_ambulance",
           "salary_gross": 8000,
-          "bonuses": 0,
+             
           "other_income": 0
         }
       ],
@@ -79,19 +76,19 @@
         {
           "source_id": "state_ambulance",
           "salary_gross": 24000,
-          "bonuses": 0,
+             
           "other_income": 0
         },
         {
           "source_id": "yemets_center",
           "salary_gross": 8000,
-          "bonuses": 0,
+             
           "other_income": 0
         },
         {
           "source_id": "private_ambulance",
           "salary_gross": 4000,
-          "bonuses": 0,
+             
           "other_income": 0
         }
       ],
@@ -104,19 +101,18 @@
         {
           "source_id": "state_ambulance",
           "salary_gross": 27000,
-          "bonuses": 2000,
           "other_income": 0
         },
         {
           "source_id": "yemets_center",
           "salary_gross": 8000,
-          "bonuses": 0,
+             
           "other_income": 0
         },
         {
           "source_id": "private_ambulance",
           "salary_gross": 9000,
-          "bonuses": 0,
+             
           "other_income": 0
         }
       ],
@@ -129,19 +125,19 @@
         {
           "source_id": "state_ambulance",
           "salary_gross": 26000,
-          "bonuses": 0,
+             
           "other_income": 0
         },
         {
           "source_id": "yemets_center",
           "salary_gross": 8000,
-          "bonuses": 0,
+             
           "other_income": 0
         },
         {
           "source_id": "private_ambulance",
           "salary_gross": 5000,
-          "bonuses": 0,
+             
           "other_income": 0
         }
       ],
@@ -154,19 +150,19 @@
         {
           "source_id": "state_ambulance",
           "salary_gross": 26500,
-          "bonuses": 1000,
+            
           "other_income": 0
         },
         {
           "source_id": "yemets_center",
           "salary_gross": 8000,
-          "bonuses": 0,
+             
           "other_income": 0
         },
         {
           "source_id": "private_ambulance",
           "salary_gross": 7000,
-          "bonuses": 0,
+             
           "other_income": 0
         }
       ],
