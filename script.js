@@ -1072,10 +1072,14 @@ class SalaryTracker {
     calculateKPIs(sourceData, allEntries) {
         const totalGrossIncome = allEntries.reduce((sum, entry) => sum + entry.salary, 0);
         const totalNetIncome = totalGrossIncome; // No taxes in this system
+        const totalHours = allEntries.reduce((sum, entry) => sum + entry.hours, 0);
         
         // Get unique months
         const uniqueMonths = [...new Set(allEntries.map(entry => entry.month))];
         const avgMonthlyIncome = uniqueMonths.length > 0 ? totalGrossIncome / uniqueMonths.length : 0;
+        
+        // Calculate average hourly rate
+        const avgHourlyRate = totalHours > 0 ? totalGrossIncome / totalHours : 0;
         
         // Find dominant source
         let dominantSource = null;
@@ -1092,6 +1096,7 @@ class SalaryTracker {
             totalGrossIncome,
             totalNetIncome,
             avgMonthlyIncome,
+            avgHourlyRate,
             dominantSource,
             monthsCount: uniqueMonths.length
         };
@@ -1212,7 +1217,7 @@ class SalaryTracker {
         document.getElementById('summaryText').textContent = 'No data available for analysis with current filters.';
         document.getElementById('totalGrossIncome').textContent = '-';
         document.getElementById('avgMonthlyIncome').textContent = '-';
-        document.getElementById('dominantSource').textContent = '-';
+        document.getElementById('averageHourlyRate').textContent = '-';
         document.getElementById('breakdownGrid').innerHTML = '';
         document.getElementById('trendAnalysis').innerHTML = '';
         document.getElementById('notableList').innerHTML = '';
@@ -1231,7 +1236,7 @@ class SalaryTracker {
     displayKPIs(kpis, sourceData) {
         document.getElementById('totalGrossIncome').textContent = `${kpis.totalGrossIncome.toFixed(0)} UAH`;
         document.getElementById('avgMonthlyIncome').textContent = `${kpis.avgMonthlyIncome.toFixed(0)} UAH`;
-        document.getElementById('dominantSource').textContent = kpis.dominantSource || 'N/A';
+        document.getElementById('averageHourlyRate').textContent = `${kpis.avgHourlyRate.toFixed(2)} UAH/hour`;
         
         // Display source breakdown
         const breakdownGrid = document.getElementById('breakdownGrid');

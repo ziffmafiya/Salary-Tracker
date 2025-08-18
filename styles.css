@@ -128,7 +128,7 @@ h3 {
 }
 
 .kpi-value {
-    color: #4CAF50;
+    color: var(--text-primary);
     font-size: 18px;
     font-weight: 600;
 }
