@@ -129,7 +129,7 @@ h3 {
 }
 
 .block-subtitle {
-    font-family: 'Tektur', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 14px;
     color: var(--text-secondary);
     margin-top: 4px;
@@ -142,7 +142,7 @@ h3 {
 
 /* Summary Text */
 .summary-text {
-    font-family: 'Tektur', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 16px;
     line-height: 1.6;
     color: var(--text-primary);
@@ -165,7 +165,7 @@ h3 {
 }
 
 .metric-label {
-    font-family: 'Tektur', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 13px;
     font-weight: 500;
     color: var(--text-secondary);
@@ -205,21 +205,21 @@ h3 {
 }
 
 .source-amount {
-    font-family: 'Tektur', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 14px;
     color: var(--text-primary);
     font-weight: 600;
 }
 
 .source-share {
-    font-family: 'Tektur', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 13px;
     color: #4CAF50;
     margin-left: 6px;
 }
 
 .source-details {
-    font-family: 'Tektur', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 12px;
     color: var(--text-secondary);
     margin-top: 6px;
@@ -260,14 +260,14 @@ h3 {
 }
 
 .trend-text-unified {
-    font-family: 'Tektur', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 14px;
     font-weight: 500;
     color: var(--text-primary);
 }
 
 .trend-stats-unified {
-    font-family: 'Tektur', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 12px;
     color: var(--text-secondary);
     line-height: 1.4;
@@ -299,13 +299,13 @@ h3 {
 }
 
 .notable-change-unified {
-    font-family: 'Tektur', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 13px;
     color: var(--text-secondary);
 }
 
 .notable-reason-unified {
-    font-family: 'Tektur', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 12px;
     color: #FF9800;
     font-style: italic;
@@ -352,7 +352,7 @@ h3 {
 }
 
 .forecast-confidence-unified {
-    font-family: 'Tektur', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 12px;
     color: var(--text-secondary);
     display: flex;
@@ -393,7 +393,7 @@ h3 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-family: 'Tektur', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 12px;
     color: var(--text-secondary);
     margin-bottom: 3px;
