@@ -1265,11 +1265,11 @@ class SalaryTracker {
         });
     }
 
-    // Calculate income forecast for next 3 months using polynomial regression
+    // Calculate income forecast for next 3 months using Autoregression
     calculateForecast(sourceData, allEntries) {
         const forecasts = {};
         const currentDate = new Date();
-        
+
         // Generate next 3 months
         const forecastMonths = [];
         for (let i = 1; i <= 3; i++) {
@@ -1284,7 +1284,7 @@ class SalaryTracker {
         // Calculate forecast for each source
         Object.entries(sourceData).forEach(([sourceId, data]) => {
             const monthlyData = {};
-            
+
             // Group entries by month for this source
             data.entries.forEach(entry => {
                 if (!monthlyData[entry.month]) {
@@ -1296,8 +1296,8 @@ class SalaryTracker {
             const months = Object.keys(monthlyData).sort();
             const values = months.map(month => monthlyData[month]);
 
-            if (values.length < 3) {
-                // Not enough data for polynomial regression, use average
+            if (values.length < 2) {
+                // Not enough data for AR model, use average
                 const avgValue = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
                 forecasts[sourceId] = {
                     name: data.name,
@@ -1311,9 +1311,9 @@ class SalaryTracker {
                 return;
             }
 
-            // Polynomial regression (degree 2) with seasonal adjustment
-            const forecast = this.calculatePolynomialForecast(values, months, forecastMonths);
-            
+            // Autoregression forecast
+            const forecast = this.calculateAutoregressionForecast(values, forecastMonths);
+
             forecasts[sourceId] = {
                 name: data.name,
                 forecasts: forecast.predictions
@@ -1323,219 +1323,110 @@ class SalaryTracker {
         return { forecasts, forecastMonths };
     }
 
-    // Polynomial regression implementation
-    calculatePolynomialForecast(values, historicalMonths, forecastMonths) {
+    // Autoregression forecast implementation
+    calculateAutoregressionForecast(values, forecastMonths) {
         const n = values.length;
-        
-        // Create time series data points (independent months)
-        const dataPoints = values.map((value, index) => ({
-            x: index,
-            y: value,
-            month: historicalMonths[index]
-        }));
+        const mean = values.reduce((a, b) => a + b, 0) / n;
+        const centeredValues = values.map(v => v - mean);
 
-        // Calculate seasonal patterns (month-of-year effect)
-        const seasonalPattern = this.calculateSeasonalPattern(dataPoints);
-        
-        // Fit polynomial regression (degree 2)
-        const coefficients = this.fitPolynomial(dataPoints, 2);
-        
-        // Calculate R-squared for confidence assessment
-        const rSquared = this.calculateRSquared(dataPoints, coefficients);
-        
-        // Determine confidence level
-        let confidence = 'low';
-        if (rSquared > 0.8) confidence = 'high';
-        else if (rSquared > 0.5) confidence = 'medium';
-
-        // Generate predictions for future months
-        const predictions = forecastMonths.map((month, index) => {
-            const futureX = n + index;
-            
-            // Base polynomial prediction
-            let predictedAmount = this.evaluatePolynomial(coefficients, futureX);
-            
-            // Apply seasonal adjustment
-            const monthOfYear = new Date(month.key + '-01').getMonth();
-            const seasonalMultiplier = seasonalPattern[monthOfYear] || 1.0;
-            predictedAmount *= seasonalMultiplier;
-            
-            // Add some randomness to reflect independence of months
-            const volatility = this.calculateVolatility(values);
-            const randomFactor = 1 + (Math.random() - 0.5) * 0.1 * (volatility / Math.max(...values));
-            predictedAmount *= randomFactor;
-            
-            // Ensure non-negative values
-            predictedAmount = Math.max(0, predictedAmount);
-            
-            // Determine trend direction
-            const trend = this.determineTrend(coefficients, futureX);
-            
+        // Determine model order 'p'
+        const p = Math.min(3, Math.floor(n / 2));
+        if (p < 1) {
+            // Not enough data, return simple average
             return {
-                month: month.key,
-                monthName: month.name,
-                amount: predictedAmount,
-                confidence: confidence,
-                trend: trend
+                predictions: forecastMonths.map(month => ({
+                    month: month.key,
+                    monthName: month.name,
+                    amount: mean > 0 ? mean : 0,
+                    confidence: 'low',
+                    trend: 'stable'
+                }))
             };
-        });
+        }
 
-        return { predictions, rSquared, coefficients };
+        // Calculate Autocorrelation Function (ACF)
+        const acf = this.calculateACF(centeredValues, p);
+
+        // Solve Yule-Walker equations using Levinson-Durbin
+        const coeffs = this.levinsonDurbin(acf, p);
+
+        // Generate forecasts
+        const history = [...values];
+        const predictions = [];
+
+        for (let i = 0; i < forecastMonths.length; i++) {
+            let forecast = mean;
+            for (let j = 0; j < p; j++) {
+                if (history.length - 1 - j >= 0) {
+                    forecast += coeffs[j] * (history[history.length - 1 - j] - mean);
+                }
+            }
+
+            // Ensure non-negative forecast
+            forecast = Math.max(0, forecast);
+
+            predictions.push({
+                month: forecastMonths[i].key,
+                monthName: forecastMonths[i].name,
+                amount: forecast,
+                confidence: 'medium', // Confidence is subjective here without more stats
+                trend: 'stable' // Trend is harder to determine from AR model alone
+            });
+            history.push(forecast);
+        }
+
+        return { predictions };
     }
 
-    // Calculate seasonal patterns based on month-of-year
-    calculateSeasonalPattern(dataPoints) {
-        const monthlyTotals = {};
-        const monthlyCounts = {};
-        
-        // Group by month of year (0-11)
-        dataPoints.forEach(point => {
-            const monthOfYear = new Date(point.month + '-01').getMonth();
-            if (!monthlyTotals[monthOfYear]) {
-                monthlyTotals[monthOfYear] = 0;
-                monthlyCounts[monthOfYear] = 0;
-            }
-            monthlyTotals[monthOfYear] += point.y;
-            monthlyCounts[monthOfYear]++;
-        });
-        
-        // Calculate average for each month
-        const monthlyAverages = {};
-        for (let month = 0; month < 12; month++) {
-            if (monthlyCounts[month] > 0) {
-                monthlyAverages[month] = monthlyTotals[month] / monthlyCounts[month];
-            }
+    // Calculate Autocorrelation Function (ACF)
+    calculateACF(values, maxLag) {
+        const n = values.length;
+        const acf = [];
+        const variance = values.reduce((sum, v) => sum + v * v, 0) / n;
+        if (variance === 0) {
+            return new Array(maxLag + 1).fill(0);
         }
-        
-        // Calculate overall average
-        const overallAverage = Object.values(monthlyAverages).reduce((a, b) => a + b, 0) / Object.keys(monthlyAverages).length;
-        
-        // Create seasonal multipliers
-        const seasonalPattern = {};
-        for (let month = 0; month < 12; month++) {
-            if (monthlyAverages[month]) {
-                seasonalPattern[month] = monthlyAverages[month] / overallAverage;
+
+        for (let lag = 0; lag <= maxLag; lag++) {
+            let covariance = 0;
+            for (let t = 0; t < n - lag; t++) {
+                covariance += values[t] * values[t + lag];
+            }
+            acf.push(covariance / (n * variance));
+        }
+        return acf;
+    }
+
+    // Levinson-Durbin algorithm to solve Yule-Walker equations
+    levinsonDurbin(acf, p) {
+        let a = [1];
+        let k = [];
+        let E = acf[0];
+
+        for (let i = 1; i <= p; i++) {
+            let num = 0;
+            for (let j = 1; j < i; j++) {
+                num += a[j] * acf[i - j];
+            }
+            num += acf[i];
+
+            if (E === 0) {
+                k.push(0);
             } else {
-                seasonalPattern[month] = 1.0; // Default multiplier
+                k.push(-num / E);
             }
-        }
-        
-        return seasonalPattern;
-    }
 
-    // Fit polynomial regression using least squares
-    fitPolynomial(dataPoints, degree) {
-        const n = dataPoints.length;
-        const matrix = [];
-        const vector = [];
-        
-        // Create normal equations matrix
-        for (let i = 0; i <= degree; i++) {
-            matrix[i] = [];
-            let sum = 0;
-            
-            for (let j = 0; j <= degree; j++) {
-                let matrixSum = 0;
-                for (let k = 0; k < n; k++) {
-                    matrixSum += Math.pow(dataPoints[k].x, i + j);
-                }
-                matrix[i][j] = matrixSum;
+            const a_new = [...a];
+            for (let j = 1; j < i; j++) {
+                a_new[j] = a[j] + k[i - 1] * a[i - j];
             }
-            
-            for (let k = 0; k < n; k++) {
-                sum += dataPoints[k].y * Math.pow(dataPoints[k].x, i);
-            }
-            vector[i] = sum;
-        }
-        
-        // Solve using Gaussian elimination
-        return this.gaussianElimination(matrix, vector);
-    }
+            a_new.push(k[i - 1]);
 
-    // Gaussian elimination solver
-    gaussianElimination(matrix, vector) {
-        const n = matrix.length;
-        
-        // Forward elimination
-        for (let i = 0; i < n; i++) {
-            // Find pivot
-            let maxRow = i;
-            for (let k = i + 1; k < n; k++) {
-                if (Math.abs(matrix[k][i]) > Math.abs(matrix[maxRow][i])) {
-                    maxRow = k;
-                }
-            }
-            
-            // Swap rows
-            [matrix[i], matrix[maxRow]] = [matrix[maxRow], matrix[i]];
-            [vector[i], vector[maxRow]] = [vector[maxRow], vector[i]];
-            
-            // Make all rows below this one 0 in current column
-            for (let k = i + 1; k < n; k++) {
-                const factor = matrix[k][i] / matrix[i][i];
-                vector[k] -= factor * vector[i];
-                for (let j = i; j < n; j++) {
-                    matrix[k][j] -= factor * matrix[i][j];
-                }
-            }
+            a = a_new;
+            E *= (1 - k[i - 1] * k[i - 1]);
         }
-        
-        // Back substitution
-        const solution = new Array(n);
-        for (let i = n - 1; i >= 0; i--) {
-            solution[i] = vector[i];
-            for (let j = i + 1; j < n; j++) {
-                solution[i] -= matrix[i][j] * solution[j];
-            }
-            solution[i] /= matrix[i][i];
-        }
-        
-        return solution;
-    }
 
-    // Evaluate polynomial at given x
-    evaluatePolynomial(coefficients, x) {
-        let result = 0;
-        for (let i = 0; i < coefficients.length; i++) {
-            result += coefficients[i] * Math.pow(x, i);
-        }
-        return result;
-    }
-
-    // Calculate R-squared
-    calculateRSquared(dataPoints, coefficients) {
-        const yMean = dataPoints.reduce((sum, point) => sum + point.y, 0) / dataPoints.length;
-        
-        let totalSumSquares = 0;
-        let residualSumSquares = 0;
-        
-        dataPoints.forEach(point => {
-            const predicted = this.evaluatePolynomial(coefficients, point.x);
-            totalSumSquares += Math.pow(point.y - yMean, 2);
-            residualSumSquares += Math.pow(point.y - predicted, 2);
-        });
-        
-        return 1 - (residualSumSquares / totalSumSquares);
-    }
-
-    // Calculate volatility (standard deviation)
-    calculateVolatility(values) {
-        const mean = values.reduce((a, b) => a + b, 0) / values.length;
-        const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
-        return Math.sqrt(variance);
-    }
-
-    // Determine trend direction based on polynomial derivative
-    determineTrend(coefficients, x) {
-        // Calculate derivative at point x
-        let derivative = 0;
-        for (let i = 1; i < coefficients.length; i++) {
-            derivative += i * coefficients[i] * Math.pow(x, i - 1);
-        }
-        
-        if (derivative > 0.01) return 'up';
-        if (derivative < -0.01) return 'down';
-        return 'stable';
+        return a.slice(1).map(val => -val); // Return the coefficients
     }
 
     displayForecast(forecastData) {
