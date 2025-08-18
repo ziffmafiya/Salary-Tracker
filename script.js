@@ -875,9 +875,14 @@ class SalaryTracker {
         // Calculate average hourly rate
         const averageRate = totalHours > 0 ? totalIncome / totalHours : 0;
 
+        // Calculate average monthly income
+        const uniqueMonths = [...new Set(filteredEntries.map(entry => entry.month))];
+        const avgMonthlyIncome = uniqueMonths.length > 0 ? totalIncome / uniqueMonths.length : 0;
+
         // Update the UI
         document.getElementById('totalIncome').textContent = `${totalIncome.toFixed(2)} UAH`;
         document.getElementById('totalHours').textContent = `${totalHours.toFixed(2)}`;
+        document.getElementById('avgMonthlyIncome').textContent = `${avgMonthlyIncome.toFixed(2)} UAH`;
         document.getElementById('averageHourlyRate').textContent = `${averageRate.toFixed(2)} UAH/hour`;
 
         // Update the gear animation to indicate custom settings are applied
