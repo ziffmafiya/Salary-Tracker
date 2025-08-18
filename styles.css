@@ -8,8 +8,8 @@
 
 body {
     font-family: 'Tektur', sans-serif;
-    background-color: #000000;
-    color: #ffffff;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
     line-height: 1.6;
 }
 
@@ -81,8 +81,8 @@ h3 {
 }
 
 .analytics-card {
-    background-color: #282828;
-    /* Changed to a more pleasant dark grey */
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 20px;
     text-align: center;
@@ -302,14 +302,14 @@ h3 {
 .form-group select {
     /*width: 100%;*/
     padding: 10px;
-    border: 2px solid #333333;
+    border: 2px solid var(--border-color);
     border-radius: 5px;
     font-family: 'Montserrat', sans-serif;
     font-size: 14px;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    background-color: #1a1a1a;
-    color: #ffffff;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    box-shadow: 0 2px 5px var(--shadow-color);
 }
 
 .form-group input:focus,
@@ -493,13 +493,16 @@ td {
 }
 
 th {
-    background-color: #1a1a1a;
-    color: #ffffff;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
     font-weight: 600;
+    border: 1px solid var(--border-color);
 }
 
 td {
-    color: #ffffff;
+    color: var(--text-primary);
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
 }
 
 .edit-btn {
@@ -1127,55 +1130,55 @@ footer {
 
 /* Theme Variables - Dark Theme (Default) */
 :root {
-    /* New unified color scheme */
-    --base-color: #F3F0F5;
-    --background-color: #0D0A0B;
-    --gray-color: #454955;
+    /* High contrast dark theme color scheme */
+    --base-color: #FFFFFF;
+    --background-color: #000000;
+    --gray-color: #666666;
 
     /** Base colors */
     --clr-dark-a0: var(--background-color);
     --clr-light-a0: var(--base-color);
 
-    /** Theme primary colors - derived from base color */
+    /** Theme primary colors - high contrast white text */
     --clr-primary-a0: var(--base-color);
-    --clr-primary-a10: #e8e4ea;
-    --clr-primary-a20: #ddd8df;
-    --clr-primary-a30: #d2ccd4;
-    --clr-primary-a40: #c7c0c9;
-    --clr-primary-a50: #bcb4be;
+    --clr-primary-a10: #f0f0f0;
+    --clr-primary-a20: #e0e0e0;
+    --clr-primary-a30: #cccccc;
+    --clr-primary-a40: #b8b8b8;
+    --clr-primary-a50: #a0a0a0;
 
-    /** Theme surface colors - based on background */
+    /** Theme surface colors - darker backgrounds for better contrast */
     --clr-surface-a0: var(--background-color);
-    --clr-surface-a10: #1a1518;
-    --clr-surface-a20: #272025;
-    --clr-surface-a30: #342b32;
-    --clr-surface-a40: #41363f;
-    --clr-surface-a50: var(--gray-color);
+    --clr-surface-a10: #0a0a0a;
+    --clr-surface-a20: #1a1a1a;
+    --clr-surface-a30: #2a2a2a;
+    --clr-surface-a40: #3a3a3a;
+    --clr-surface-a50: #4a4a4a;
 
-    /** Theme tonal surface colors */
-    --clr-surface-tonal-a0: #161216;
-    --clr-surface-tonal-a10: #231d23;
-    --clr-surface-tonal-a20: #302830;
-    --clr-surface-tonal-a30: #3d333d;
-    --clr-surface-tonal-a40: #4a3e4a;
-    --clr-surface-tonal-a50: #574957;
+    /** Theme tonal surface colors - slightly warmer dark tones */
+    --clr-surface-tonal-a0: #0f0f0f;
+    --clr-surface-tonal-a10: #1f1f1f;
+    --clr-surface-tonal-a20: #2f2f2f;
+    --clr-surface-tonal-a30: #3f3f3f;
+    --clr-surface-tonal-a40: #4f4f4f;
+    --clr-surface-tonal-a50: #5f5f5f;
 
-    /* Application variables mapped to new color system */
+    /* Application variables mapped to high contrast system */
     --bg-primary: var(--clr-surface-a0);
-    --bg-secondary: var(--clr-surface-tonal-a0);
-    --bg-tertiary: var(--clr-surface-a10);
+    --bg-secondary: var(--clr-surface-a10);
+    --bg-tertiary: var(--clr-surface-a20);
     --bg-quaternary: var(--clr-surface-tonal-a10);
     --text-primary: var(--clr-primary-a0);
-    --text-secondary: var(--clr-primary-a30);
-    --text-muted: var(--clr-primary-a50);
+    --text-secondary: var(--clr-primary-a20);
+    --text-muted: var(--clr-primary-a30);
     --accent-primary: #4CAF50;
     --accent-secondary: #388E3C;
-    --border-color: var(--clr-surface-a20);
+    --border-color: var(--clr-surface-a30);
     --danger-color: #F44336;
     --danger-hover: #D32F2F;
     --positive-color: #4CAF50;
     --negative-color: #F44336;
-    --shadow-color: rgba(13, 10, 11, 0.4);
+    --shadow-color: rgba(0, 0, 0, 0.6);
 }
 
 [data-theme="light"] {
