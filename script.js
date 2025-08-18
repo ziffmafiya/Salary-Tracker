@@ -979,11 +979,15 @@ class SalaryTracker {
         // Find notable months
         const notableMonths = this.findNotableMonths(filteredEntries);
         
+        // Calculate forecast
+        const forecastData = this.calculateForecast(sourceData, filteredEntries);
+        
         // Update UI
         this.displayAnalysisSummary(kpis, sourceData);
         this.displayKPIs(kpis, sourceData);
         this.displayTrends(trends);
         this.displayNotableMonths(notableMonths);
+        this.displayForecast(forecastData);
     }
 
     groupEntriesBySource(entries) {
@@ -1162,6 +1166,7 @@ class SalaryTracker {
         document.getElementById('breakdownGrid').innerHTML = '';
         document.getElementById('trendAnalysis').innerHTML = '';
         document.getElementById('notableList').innerHTML = '';
+        document.getElementById('forecastGrid').innerHTML = '';
     }
 
     displayAnalysisSummary(kpis, sourceData) {
@@ -1264,6 +1269,182 @@ class SalaryTracker {
             `;
             notableList.appendChild(item);
         });
+    }
+
+    // Calculate income forecast for next 3 months
+    calculateForecast(sourceData, allEntries) {
+        const forecasts = {};
+        const currentDate = new Date();
+        
+        // Generate next 3 months
+        const forecastMonths = [];
+        for (let i = 1; i <= 3; i++) {
+            const futureDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
+            const monthKey = `${futureDate.getFullYear()}-${(futureDate.getMonth() + 1).toString().padStart(2, '0')}`;
+            forecastMonths.push({
+                key: monthKey,
+                name: futureDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+            });
+        }
+
+        // Calculate forecast for each source
+        Object.entries(sourceData).forEach(([sourceId, data]) => {
+            const monthlyData = {};
+            
+            // Group entries by month for this source
+            data.entries.forEach(entry => {
+                if (!monthlyData[entry.month]) {
+                    monthlyData[entry.month] = 0;
+                }
+                monthlyData[entry.month] += entry.salary;
+            });
+
+            const months = Object.keys(monthlyData).sort();
+            const values = months.map(month => monthlyData[month]);
+
+            if (values.length < 2) {
+                // Not enough data for forecast
+                forecasts[sourceId] = {
+                    name: data.name,
+                    forecasts: forecastMonths.map(month => ({
+                        month: month.key,
+                        monthName: month.name,
+                        amount: 0,
+                        confidence: 'low'
+                    }))
+                };
+                return;
+            }
+
+            // Simple linear regression
+            const n = values.length;
+            const xValues = Array.from({length: n}, (_, i) => i);
+            const yValues = values;
+
+            const sumX = xValues.reduce((a, b) => a + b, 0);
+            const sumY = yValues.reduce((a, b) => a + b, 0);
+            const sumXY = xValues.reduce((sum, x, i) => sum + x * yValues[i], 0);
+            const sumXX = xValues.reduce((sum, x) => sum + x * x, 0);
+
+            const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+
+            // Calculate R-squared for confidence
+            const yMean = sumY / n;
+            const totalSumSquares = yValues.reduce((sum, y) => sum + Math.pow(y - yMean, 2), 0);
+            const residualSumSquares = yValues.reduce((sum, y, i) => {
+                const predicted = slope * i + intercept;
+                return sum + Math.pow(y - predicted, 2);
+            }, 0);
+            const rSquared = 1 - (residualSumSquares / totalSumSquares);
+
+            // Determine confidence level
+            let confidence = 'low';
+            if (rSquared > 0.7) confidence = 'high';
+            else if (rSquared > 0.4) confidence = 'medium';
+
+            // Generate forecasts
+            const sourceForecasts = forecastMonths.map((month, index) => {
+                const futureX = n + index;
+                const predictedAmount = Math.max(0, slope * futureX + intercept);
+                
+                return {
+                    month: month.key,
+                    monthName: month.name,
+                    amount: predictedAmount,
+                    confidence: confidence,
+                    trend: slope > 0 ? 'up' : slope < 0 ? 'down' : 'stable'
+                };
+            });
+
+            forecasts[sourceId] = {
+                name: data.name,
+                forecasts: sourceForecasts
+            };
+        });
+
+        return { forecasts, forecastMonths };
+    }
+
+    displayForecast(forecastData) {
+        const forecastGrid = document.getElementById('forecastGrid');
+        forecastGrid.innerHTML = '';
+
+        if (!forecastData || Object.keys(forecastData.forecasts).length === 0) {
+            const item = document.createElement('div');
+            item.className = 'forecast-item';
+            item.innerHTML = '<div class="forecast-month">No data available for forecast</div>';
+            forecastGrid.appendChild(item);
+            return;
+        }
+
+        const { forecasts, forecastMonths } = forecastData;
+
+        // Create overall forecast for each month
+        forecastMonths.forEach(month => {
+            const monthForecasts = Object.values(forecasts).map(source => {
+                const monthForecast = source.forecasts.find(f => f.month === month.key);
+                return monthForecast ? monthForecast.amount : 0;
+            });
+
+            const totalForecast = monthForecasts.reduce((sum, amount) => sum + amount, 0);
+            const avgConfidence = this.calculateAverageConfidence(Object.values(forecasts), month.key);
+
+            const item = document.createElement('div');
+            item.className = 'forecast-item overall';
+
+            const trendIcon = this.getTrendIcon(totalForecast, month.key, forecasts);
+
+            item.innerHTML = `
+                <div class="forecast-trend">${trendIcon}</div>
+                <div class="forecast-month">${month.name}</div>
+                <div class="forecast-amount">${totalForecast.toFixed(0)} UAH</div>
+                <div class="forecast-confidence">
+                    <span class="confidence-indicator ${avgConfidence}"></span>
+                    Confidence: ${avgConfidence}
+                </div>
+                <div class="forecast-breakdown">
+                    ${Object.values(forecasts).map(source => {
+                        const monthForecast = source.forecasts.find(f => f.month === month.key);
+                        const amount = monthForecast ? monthForecast.amount : 0;
+                        return `<div class="forecast-source">
+                            <span>${source.name}</span>
+                            <span>${amount.toFixed(0)} UAH</span>
+                        </div>`;
+                    }).join('')}
+                </div>
+            `;
+
+            forecastGrid.appendChild(item);
+        });
+    }
+
+    calculateAverageConfidence(forecasts, monthKey) {
+        const confidenceValues = { 'high': 3, 'medium': 2, 'low': 1 };
+        const confidenceNames = { 3: 'high', 2: 'medium', 1: 'low' };
+        
+        const avgValue = forecasts.reduce((sum, source) => {
+            const monthForecast = source.forecasts.find(f => f.month === monthKey);
+            const confidence = monthForecast ? monthForecast.confidence : 'low';
+            return sum + confidenceValues[confidence];
+        }, 0) / forecasts.length;
+
+        return confidenceNames[Math.round(avgValue)] || 'low';
+    }
+
+    getTrendIcon(totalForecast, monthKey, forecasts) {
+        // Calculate overall trend based on individual source trends
+        const trends = Object.values(forecasts).map(source => {
+            const monthForecast = source.forecasts.find(f => f.month === monthKey);
+            return monthForecast ? monthForecast.trend : 'stable';
+        });
+
+        const upCount = trends.filter(t => t === 'up').length;
+        const downCount = trends.filter(t => t === 'down').length;
+
+        if (upCount > downCount) return '📈';
+        if (downCount > upCount) return '📉';
+        return '➡️';
     }
 
     updateBaseRatesInfo() {
