@@ -746,41 +746,13 @@ class SalaryTracker {
             jobCell.textContent = job.name;
 
             const salaryCell = document.createElement('td');
-            salaryCell.classList.add('salary-cell-content');
-            const salaryValueSpan = document.createElement('span');
-            salaryValueSpan.textContent = `${entry.salary.toFixed(2)} UAH`;
-            salaryCell.appendChild(salaryValueSpan);
-
-            // Add percentage change indicator for salary
-            if (salaryPercentChange !== null) {
-                const percentSpan = document.createElement('span');
-                percentSpan.className = salaryPercentChange >= 0 ? 'percent-change positive' : 'percent-change negative';
-
-                // Create SVG arrow
-                const svgIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svgIcon.classList.add('arrow-icon');
-                svgIcon.setAttribute('width', '12');
-                svgIcon.setAttribute('height', '12');
-
-                const useElement = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-                useElement.setAttribute('href',
-                    salaryPercentChange >= 0 ? '#arrow-up' : '#arrow-down');
-
-                svgIcon.appendChild(useElement);
-                percentSpan.appendChild(svgIcon);
-
-                // Add percentage text
-                const percentText = document.createTextNode(` ${salaryPercentChange >= 0 ? '+' : ''}${salaryPercentChange.toFixed(1)}%`);
-                percentSpan.appendChild(percentText);
-
-                salaryCell.appendChild(percentSpan);
-            }
+            salaryCell.textContent = `${entry.salary.toFixed(2)} UAH`;
 
             const hoursCell = document.createElement('td');
             hoursCell.textContent = entry.hours;
 
             const hourlyRateCell = document.createElement('td');
-            hourlyRateCell.innerHTML = `${hourlyRate.toFixed(2)} UAH/h`;
+            hourlyRateCell.textContent = `${hourlyRate.toFixed(2)} UAH/h`;
 
             const salaryDiffCell = document.createElement('td');
             salaryDiffCell.textContent = `${salaryDiff >= 0 ? '+' : ''}${salaryDiff.toFixed(2)}`;
@@ -791,18 +763,19 @@ class SalaryTracker {
             rateDiffCell.className = rateDiff >= 0 ? 'positive' : 'negative';
 
             const actionCell = document.createElement('td');
+            actionCell.className = 'action-cell';
 
-            // Create edit button
+            // Create edit button with icon
             const editBtn = document.createElement('button');
-            editBtn.className = 'edit-btn';
-            editBtn.textContent = 'Edit';
+            editBtn.className = 'icon-btn edit-btn';
+            editBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
             editBtn.addEventListener('click', () => this.openEditEntryModal(entry));
             actionCell.appendChild(editBtn);
 
-            // Create delete button
+            // Create delete button with icon
             const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'delete-btn';
-            deleteBtn.textContent = 'Delete';
+            deleteBtn.className = 'icon-btn delete-btn';
+            deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
             deleteBtn.addEventListener('click', () => this.deleteEntry(entry.id));
             actionCell.appendChild(deleteBtn);
 
@@ -1637,11 +1610,25 @@ class SalaryTracker {
                         }
                     },
                     tooltip: {
-                        backgroundColor: '#ffffff',
-                        titleColor: '#0D0A0B',
-                        bodyColor: '#0D0A0B',
-                        borderColor: '#f0ecf2',
-                        borderWidth: 1
+                        enabled: true,
+                        backgroundColor: '#1F2937',
+                        titleColor: '#FFFFFF',
+                        bodyColor: '#FFFFFF',
+                        borderColor: '#4A55E1',
+                        borderWidth: 1,
+                        padding: 10,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
                     }
                 }
             }

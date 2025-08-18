@@ -37,230 +37,155 @@
     </svg>
 </head>
 
-<body data-theme="light"></body>
-<div class="container" id="app-container">
-    <!-- Page header with title and theme switcher -->
-    <header>
-        <h1>Salary Tracker</h1>
-    </header>
+<body data-theme="light">
+    <div class="container" id="app-container">
+        <header>
+            <h1>Salary Tracker</h1>
+        </header>
+        <div class="dashboard-layout">
+            <main class="main-content">
+                <!-- General Analytics Section -->
+                <section class="analytics-section-unified">
+                    <div class="section-header">
+                        <h2>Overview</h2>
+                        <div class="settings-gear" id="analyticsSettingsBtn">
+                            <div id="gearAnimation"></div>
+                        </div>
+                    </div>
+                    <!-- Key Metrics Block -->
+                    <div class="analytics-block">
+                        <div class="block-content">
+                            <div class="metrics-grid">
+                                <div class="metric-item">
+                                    <div class="metric-label">Total Income</div>
+                                    <div class="metric-value" id="totalIncome">-</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Total Hours</div>
+                                    <div class="metric-value" id="totalHours">-</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Avg Monthly Income</div>
+                                    <div class="metric-value" id="avgMonthlyIncome">-</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Avg Hourly Rate</div>
+                                    <div class="metric-value" id="averageHourlyRate">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
-    <!-- General Analytics Section -->
-    <section class="analytics-section-unified">
-        <div class="section-header">
-            <h2>General Analytics</h2>
-            <div class="settings-gear" id="analyticsSettingsBtn">
-                <div id="gearAnimation"></div>
-            </div>
+                <!-- Monthly Income Chart Section -->
+                <section class="chart-section">
+                    <div class="section-header">
+                        <div class="chart-title-container">
+                            <h2>Monthly Income</h2>
+                        </div>
+                        <div class="settings-gear" id="monthlyIncomeSettingsBtn">
+                            <div id="gearAnimation"></div>
+                        </div>
+                    </div>
+                    <canvas id="salaryChart"></canvas>
+                </section>
+
+                <!-- Salary History Section -->
+                <section class="history-section">
+                    <h2>Salary History</h2>
+                    <div class="table-container">
+                        <table id="salaryHistoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th>Job</th>
+                                    <th>Salary (UAH)</th>
+                                    <th>Hours</th>
+                                    <th>Hourly Rate</th>
+                                    <th>Salary Diff</th>
+                                    <th>Rate Diff</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Salary history will be populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <button id="clearAllData" class="danger-button">Clear All Data</button>
+                </section>
+            </main>
+            <aside class="sidebar">
+                <!-- Data Entry Section -->
+                <section class="data-section">
+                    <div class="add-salary-section">
+                        <h2>Add Salary Data</h2>
+                        <form id="salaryForm">
+                            <div class="form-group">
+                                <label for="jobSelect">Job:</label>
+                                <select id="jobSelect" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="monthYearInput">Month and Year:</label>
+                                <input type="month" id="monthYearInput" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="salary">Salary (UAH):</label>
+                                <input type="number" id="salary" step="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="hours">Hours Worked:</label>
+                                <input type="number" id="hours" step="0.1" required value="96">
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit">Add Entry</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- Statistics Section -->
+                <section class="statistics-section">
+                    <div class="statistics-header">
+                        <h2>Statistics</h2>
+                        <div class="job-selector">
+                            <label for="viewJobSelect">View Job Data:</label>
+                            <select id="viewJobSelect"></select>
+                        </div>
+                    </div>
+                    <div class="current-entry">
+                        <h3>Last Entry</h3>
+                        <div class="stat-item">
+                            <span class="label">Salary:</span>
+                            <span id="currentSalary" class="tooltip-trigger">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Hours:</span>
+                            <span id="currentHours">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Hourly Rate:</span>
+                            <span id="currentHourlyRate" class="tooltip-trigger">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Difference:</span>
+                            <span id="currentDifference" class="tooltip-trigger">-</span>
+                        </div>
+                    </div>
+                </section>
+            </aside>
         </div>
+>>>>>>> Stashed changes
+    <!-- Tooltip element for displaying additional information on hover -->
+    <div class="tooltip" id="tooltip"></div>
 
-        <!-- Summary Block -->
-        <div class="analytics-block">
-            <div class="block-header">
-                <h3>Summary</h3>
-            </div>
-            <div class="block-content">
-                <p id="summaryText" class="summary-text">Loading analysis...</p>
-            </div>
-        </div>
-
-        <!-- Key Metrics Block -->
-        <div class="analytics-block">
-            <div class="block-header">
-                <h3>Key Metrics</h3>
-            </div>
-            <div class="block-content">
-                <div class="metrics-grid">
-                    <div class="metric-item">
-                        <div class="metric-label">Total Income</div>
-                        <div class="metric-value" id="totalIncome">-</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-label">Total Hours</div>
-                        <div class="metric-value" id="totalHours">-</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-label">Total Gross Income</div>
-                        <div class="metric-value" id="totalGrossIncome">-</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-label">Average Monthly Income</div>
-                        <div class="metric-value" id="avgMonthlyIncome">-</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-label">Average Hourly Rate</div>
-                        <div class="metric-value" id="averageHourlyRate">-</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Income Sources Block -->
-        <div class="analytics-block">
-            <div class="block-header">
-                <h3>Income by Source</h3>
-            </div>
-            <div class="block-content">
-                <div class="sources-grid" id="breakdownGrid">
-                    <!-- Will be populated dynamically -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Trends Analysis Block -->
-        <div class="analytics-block">
-            <div class="block-header">
-                <h3>Income Trends</h3>
-            </div>
-            <div class="block-content">
-                <div class="trends-grid" id="trendAnalysis">
-                    <!-- Will be populated dynamically -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Notable Months Block -->
-        <div class="analytics-block">
-            <div class="block-header">
-                <h3>Notable Months</h3>
-            </div>
-            <div class="block-content">
-                <div class="notable-grid" id="notableList">
-                    <!-- Will be populated dynamically -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Forecast Block -->
-        <div class="analytics-block">
-            <div class="block-header">
-                <h3>Income Forecast</h3>
-                <div class="block-subtitle">Linear projection for the next 3 months</div>
-            </div>
-            <div class="block-content">
-                <div class="forecast-grid" id="forecastGrid">
-                    <!-- Will be populated dynamically -->
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Monthly Income Chart Section -->
-    <!-- Monthly Income Chart Section - Visual representation of income data -->
-    <section class="chart-section">
-        <div class="section-header">
-            <div class="chart-title-container">
-                <h2>Monthly Income</h2>
-            </div>
-            <!-- Settings button for chart customization -->
-            <div class="settings-gear" id="monthlyIncomeSettingsBtn">
-                <div id="gearAnimation"></div>
-            </div>
-        </div>
-        <!-- Canvas for Chart.js to render the salary chart -->
-        <canvas id="salaryChart"></canvas>
-    </section>
-
-    <!-- Data Entry Section -->
-    <!-- Data Entry Section - Split into two columns -->
-    <section class="data-section">
-        <!-- Left column - Form for adding new salary entries -->
-        <div class="left-section">
-            <div class="add-salary-section">
-                <h2>Add Salary Data</h2>
-                <form id="salaryForm">
-                    <div class="form-group">
-                        <label for="jobSelect">Job:</label>
-                        <select id="jobSelect" required>
-                            <!-- Jobs will be populated dynamically -->
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="monthYearInput">Month and Year:</label>
-                        <input type="month" id="monthYearInput" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="salary">Salary (UAH):</label>
-                        <input type="number" id="salary" step="0.01" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="hours">Hours Worked:</label>
-                        <input type="number" id="hours" step="0.1" required value="96">
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit">Add Entry</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Visual divider between columns -->
-        <div class="divider"></div>
-
-        <!-- Right column - Statistics display -->
-        <div class="right-section">
-            <div class="statistics-section">
-                <div class="statistics-header">
-                    <h2>Statistics</h2>
-                    <!-- Dropdown to select which job's data to view -->
-                    <div class="job-selector">
-                        <label for="viewJobSelect">View Job Data:</label>
-                        <select id="viewJobSelect">
-                            <!-- Jobs will be populated dynamically -->
-                        </select>
-                    </div>
-                </div>
-                <!-- Display of the most recent salary entry -->
-                <div class="current-entry">
-                    <h3>Last Entry</h3>
-                    <div class="stat-item">
-                        <span class="label">Salary:</span>
-                        <span id="currentSalary" class="tooltip-trigger">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="label">Hours:</span>
-                        <span id="currentHours">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="label">Hourly Rate:</span>
-                        <span id="currentHourlyRate" class="tooltip-trigger">-</span>
-                        <span class="label" style="margin-left: 15px;">Difference:</span>
-                        <span id="currentDifference" class="tooltip-trigger">-</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Salary History Section -->
-    <!-- Salary History Section - Tabular display of all salary entries -->
-    <section class="history-section">
-        <h2>Salary History</h2>
-        <div class="table-container">
-            <table id="salaryHistoryTable">
-                <thead>
-                    <tr>
-                        <th>Month</th>
-                        <th>Job</th>
-                        <th>Salary (UAH)</th>
-                        <th>Hours</th>
-                        <th>Hourly Rate</th>
-                        <th>Salary Diff</th>
-                        <th>Rate Diff</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Salary history will be populated dynamically -->
-                    <td class="button-group">
-                        <button class="edit-btn">Edit</button>
-                        <button class="delete-btn">Delete</button>
-                    </td>
-                </tbody>
-            </table>
-        </div>
-        <!-- Button to clear all stored data -->
-        <button id="clearAllData" class="danger-button">Clear All Data</button>
-    </section>
+    <!-- Job Settings Button -->
+    <!-- Job Settings Button - Opens job management modal -->
+    <div class="settings-container">
+        <button id="jobSettingsBtn" class="settings-button">Job Settings</button>
+        <button id="exportDataBtn" class="settings-button">Export Data</button>
+    </div>
+</div>
 
     <!-- Tooltip element for displaying additional information on hover -->
     <div class="tooltip" id="tooltip"></div>
