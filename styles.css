@@ -77,35 +77,32 @@ h3 {
 
 /* Unified Analytics Section */
 .analytics-section-unified {
-    background-color: var(--bg-secondary);
-    border-radius: 12px;
-    padding: 32px;
-    margin-bottom: 40px;
-    box-shadow: 0 4px 16px var(--shadow-color);
+    background-color: #111111;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .analytics-section-unified .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 32px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 20px;
 }
 
 .analytics-section-unified .section-header h2 {
+    color: #ffffff;
     font-family: 'Tektur', sans-serif;
-    font-size: 32px;
     font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
+    margin-bottom: 20px;
 }
 
 /* Analytics Blocks */
 .analytics-block {
     background-color: var(--bg-tertiary);
     border-radius: 10px;
-    margin-bottom: 24px;
+    margin-bottom: 30px;
     border: 1px solid var(--border-color);
     overflow: hidden;
 }
@@ -116,16 +113,15 @@ h3 {
 
 .block-header {
     background-color: var(--bg-quaternary);
-    padding: 16px 20px;
+    padding: 12px 15px;
     border-bottom: 1px solid var(--border-color);
 }
 
 .block-header h3 {
+    color: #ffffff;
     font-family: 'Tektur', sans-serif;
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
+    font-weight: 500;
+    margin-bottom: 15px;
 }
 
 .block-subtitle {
@@ -137,7 +133,7 @@ h3 {
 }
 
 .block-content {
-    padding: 20px;
+    padding: 15px;
 }
 
 /* Summary Text */
@@ -157,10 +153,10 @@ h3 {
 }
 
 .metric-item {
-    background-color: var(--bg-secondary);
+    background-color: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    padding: 16px;
+    padding: 20px;
     text-align: center;
 }
 
@@ -189,10 +185,10 @@ h3 {
 }
 
 .source-item {
-    background-color: var(--bg-secondary);
+    background-color: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    padding: 16px;
+    padding: 20px;
     border-left: 4px solid #4CAF50;
 }
 
@@ -233,10 +229,10 @@ h3 {
 }
 
 .trend-item-unified {
-    background-color: var(--bg-secondary);
+    background-color: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    padding: 16px;
+    padding: 20px;
     border-left: 4px solid #2196F3;
 }
 
@@ -281,10 +277,10 @@ h3 {
 }
 
 .notable-item-unified {
-    background-color: var(--bg-secondary);
+    background-color: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    padding: 12px;
+    padding: 20px;
     border-left: 3px solid #FF9800;
     display: flex;
     justify-content: space-between;
@@ -319,10 +315,10 @@ h3 {
 }
 
 .forecast-item-unified {
-    background-color: var(--bg-secondary);
+    background-color: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    padding: 16px;
+    padding: 20px;
     border-left: 4px solid #2196F3;
     position: relative;
 }
