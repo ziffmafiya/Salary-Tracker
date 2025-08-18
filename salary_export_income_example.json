@@ -1,0 +1,77 @@
+{
+  "person": {
+    "id": "user_001",
+    "name": "Максим",
+    "role": "Doctor",
+    "country": "Ukraine"
+  },
+  "currency": "UAH",
+  "period_granularity": "monthly",
+  "records": [
+    {
+      "period_start": "2024-07-01",
+      "period_end": "2024-07-31",
+      "salary_gross": 40000,
+      "bonuses": 2000,
+      "other_income": 0,
+      "taxes_total": 6000,
+      "notes": ""
+    },
+    {
+      "period_start": "2024-08-01",
+      "period_end": "2024-08-31",
+      "salary_gross": 42000,
+      "bonuses": 1000,
+      "other_income": 0,
+      "taxes_total": 6300,
+      "notes": ""
+    },
+    {
+      "period_start": "2024-09-01",
+      "period_end": "2024-09-30",
+      "salary_gross": 38000,
+      "bonuses": 0,
+      "other_income": 0,
+      "taxes_total": 5700,
+      "notes": ""
+    },
+    {
+      "period_start": "2024-10-01",
+      "period_end": "2024-10-31",
+      "salary_gross": 45000,
+      "bonuses": 3000,
+      "other_income": 0,
+      "taxes_total": 7200,
+      "notes": "bonus month"
+    },
+    {
+      "period_start": "2024-11-01",
+      "period_end": "2024-11-30",
+      "salary_gross": 43000,
+      "bonuses": 0,
+      "other_income": 0,
+      "taxes_total": 6450,
+      "notes": ""
+    },
+    {
+      "period_start": "2024-12-01",
+      "period_end": "2024-12-31",
+      "salary_gross": 44000,
+      "bonuses": 2000,
+      "other_income": 0,
+      "taxes_total": 6900,
+      "notes": ""
+    }
+  ],
+  "export_summary": {
+    "records_count": 6,
+    "period_covered_start": "2024-07-01",
+    "period_covered_end": "2024-12-31",
+    "exported_at": "2025-08-18T10:00:00+03:00"
+  },
+  "metadata": {
+    "generated_by": "salary-site v1.2",
+    "version": "1.0",
+    "notes": "пример - только доходы"
+  }
+}

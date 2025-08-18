@@ -541,16 +541,26 @@ td {
 .settings-container {
     display: flex;
     justify-content: center;
+    gap: 15px;
     margin-bottom: 30px;
 }
 
 .settings-button {
     background-color: #333333;
     padding: 10px 20px;
+    transition: background-color 0.3s ease;
 }
 
 .settings-button:hover {
     background-color: #4CAF50;
+}
+
+#exportDataBtn {
+    background-color: #2196F3;
+}
+
+#exportDataBtn:hover {
+    background-color: #1976D2;
 }
 
 /* Modal */

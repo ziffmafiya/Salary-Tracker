@@ -1,0 +1,32 @@
+{
+  "person": {
+    "id": null,
+    "name": "",
+    "role": "",
+    "country": ""
+  },
+  "currency": "UAH",
+  "period_granularity": "monthly",
+  "records": [
+    {
+      "period_start": "YYYY-MM-DD",
+      "period_end": "YYYY-MM-DD",
+      "salary_gross": 0.0,
+      "bonuses": 0.0,
+      "other_income": 0.0,
+      "taxes_total": null,
+      "notes": ""
+    }
+  ],
+  "export_summary": {
+    "records_count": 0,
+    "period_covered_start": null,
+    "period_covered_end": null,
+    "exported_at": "YYYY-MM-DDTHH:MM:SS+03:00"
+  },
+  "metadata": {
+    "generated_by": "",
+    "version": "1.0",
+    "notes": ""
+  }
+}

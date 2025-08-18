@@ -122,7 +122,7 @@ class SalaryTracker {
         this.populateJobSelects();
         this.populateChartViewSelect();
         this.setupChart();
-        
+
         this.updateSalaryHistory(); // Вызывается после инициализации analyticsSettings.includedJobs
         this.updateGeneralAnalytics();
         this.updateBaseRatesInfo();
@@ -133,7 +133,7 @@ class SalaryTracker {
             this.updateStatistics();
         }
     }
-    
+
     // This function is no longer needed as we won't be creating default jobs.
     // Users will add their own jobs.
     // setupDefaultJobs() { ... }
@@ -141,10 +141,10 @@ class SalaryTracker {
     setupThemeToggle() {
         const themeToggle = document.getElementById('themeToggle');
         const body = document.body;
-        
+
         // Load saved theme preference
         const savedTheme = localStorage.getItem('salaryTrackerTheme') || 'dark';
-        
+
         // Apply saved theme
         if (savedTheme === 'light') {
             body.setAttribute('data-theme', 'light');
@@ -153,7 +153,7 @@ class SalaryTracker {
             body.removeAttribute('data-theme');
             themeToggle.checked = false;
         }
-        
+
         // Theme toggle event listener
         themeToggle.addEventListener('change', () => {
             if (themeToggle.checked) {
@@ -165,18 +165,18 @@ class SalaryTracker {
                 body.removeAttribute('data-theme');
                 localStorage.setItem('salaryTrackerTheme', 'dark');
             }
-            
+
             // Update chart colors if chart exists
             if (this.chart) {
                 this.updateChartTheme();
             }
         });
     }
-    
+
     // Update chart theme colors
     updateChartTheme() {
         const isDarkTheme = !document.body.hasAttribute('data-theme') || document.body.getAttribute('data-theme') === 'dark';
-        
+
         if (this.chart) {
             // Update chart options for theme
             this.chart.options.plugins.legend.labels.color = isDarkTheme ? '#F3F0F5' : '#0D0A0B';
@@ -184,11 +184,11 @@ class SalaryTracker {
             this.chart.options.scales.y.ticks.color = isDarkTheme ? '#F3F0F5' : '#0D0A0B';
             this.chart.options.scales.x.grid.color = isDarkTheme ? '#272025' : '#f0ecf2';
             this.chart.options.scales.y.grid.color = isDarkTheme ? '#272025' : '#f0ecf2';
-            
+
             // Update chart background
             Chart.defaults.color = isDarkTheme ? '#F3F0F5' : '#0D0A0B';
             Chart.defaults.borderColor = isDarkTheme ? '#272025' : '#f0ecf2';
-            
+
             // Update chart
             this.chart.update();
         }
@@ -365,6 +365,11 @@ class SalaryTracker {
         document.getElementById('editEntryForm').addEventListener('submit', (e) => {
             e.preventDefault();
             this.saveEntryEdit();
+        });
+
+        // Export data button
+        document.getElementById('exportDataBtn').addEventListener('click', () => {
+            this.exportData();
         });
     }
 
@@ -590,11 +595,11 @@ class SalaryTracker {
                     .from('entries')
                     .update({ salary, hours })
                     .eq('id', existingEntry.id)
-            .select();
-        if (error) {
-            console.error('Error updating entry:', error);
-        } else {
-            const index = this.entries.findIndex(e => e.id === existingEntry.id);
+                    .select();
+                if (error) {
+                    console.error('Error updating entry:', error);
+                } else {
+                    const index = this.entries.findIndex(e => e.id === existingEntry.id);
                     this.entries[index] = { ...data[0], jobId: data[0].job_id }; // Add jobId
                 }
             } else {
@@ -604,12 +609,12 @@ class SalaryTracker {
             const { data, error } = await this.supabase
                 .from('entries')
                 .insert([{ job_id: jobId, month: monthYearInput, salary, hours }])
-            .select();
-        if (error) {
-            console.error('Error adding entry:', error);
-        } else {
-            this.entries.push({ ...data[0], jobId: data[0].job_id }); // Add jobId
-            this.currentJobId = jobId;
+                .select();
+            if (error) {
+                console.error('Error adding entry:', error);
+            } else {
+                this.entries.push({ ...data[0], jobId: data[0].job_id }); // Add jobId
+                this.currentJobId = jobId;
                 document.getElementById('viewJobSelect').value = jobId;
                 this.updateSalaryHistory();
                 this.updateGeneralAnalytics();
@@ -1063,7 +1068,7 @@ class SalaryTracker {
                         title: {
                             display: true,
                             text: 'Month',
-                            
+
                         },
                         grid: {
                             color: '#2c3e50'
@@ -1479,6 +1484,87 @@ class SalaryTracker {
         this.populateChartViewSelect(); // This will set the selected value
 
         this.updateChart();
+    }
+
+    // Export data to JSON format
+    exportData() {
+        if (this.entries.length === 0) {
+            alert('Нет данных для экспорта');
+            return;
+        }
+
+        // Get user information from first job or use defaults
+        const firstJob = this.jobs.length > 0 ? this.jobs[0] : null;
+        const userName = firstJob ? firstJob.name : '';
+
+        // Sort entries by date
+        const sortedEntries = [...this.entries].sort((a, b) => a.month.localeCompare(b.month));
+
+        // Convert entries to export format
+        const records = sortedEntries.map(entry => {
+            const job = this.jobs.find(j => j.id === entry.jobId);
+            const [year, month] = entry.month.split('-');
+            const startDate = `${year}-${month}-01`;
+            const endDate = new Date(year, month, 0).toISOString().split('T')[0]; // Last day of month
+
+            // Calculate taxes (approximate 15% of gross salary)
+            const taxesTotal = Math.round(entry.salary * 0.15);
+
+            return {
+                period_start: startDate,
+                period_end: endDate,
+                salary_gross: entry.salary,
+                bonuses: 0.0, // No bonus data in current system
+                other_income: 0.0, // No other income data
+                taxes_total: taxesTotal,
+                notes: job ? `Работа: ${job.name}, Часы: ${entry.hours}` : `Часы: ${entry.hours}`
+            };
+        });
+
+        // Calculate summary data
+        const periodStart = sortedEntries.length > 0 ? sortedEntries[0].month + '-01' : null;
+        const lastEntry = sortedEntries[sortedEntries.length - 1];
+        const [lastYear, lastMonth] = lastEntry.month.split('-');
+        const periodEnd = new Date(lastYear, lastMonth, 0).toISOString().split('T')[0];
+
+        // Create export object
+        const exportData = {
+            person: {
+                id: null,
+                name: userName,
+                role: firstJob ? firstJob.name : '',
+                country: 'Ukraine'
+            },
+            currency: 'UAH',
+            period_granularity: 'monthly',
+            records: records,
+            export_summary: {
+                records_count: records.length,
+                period_covered_start: periodStart,
+                period_covered_end: periodEnd,
+                exported_at: new Date().toISOString().replace('Z', '+03:00')
+            },
+            metadata: {
+                generated_by: 'Salary Tracker v1.0',
+                version: '1.0',
+                notes: 'Экспорт данных о зарплате'
+            }
+        };
+
+        // Create and download file
+        const jsonString = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `salary_export_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        console.log('Данные экспортированы:', exportData);
     }
 }
 
