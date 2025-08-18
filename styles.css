@@ -1248,7 +1248,7 @@ td {
 #salaryHistoryTable td:nth-child(6),
 #salaryHistoryTable th:nth-child(7),
 #salaryHistoryTable td:nth-child(7) {
-    text-align: right;
+    text-align: left;
 }
 
 th {
