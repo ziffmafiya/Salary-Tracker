@@ -39,16 +39,8 @@
 
 <body data-theme="light">
     <div class="container" id="app-container">
-        <header class="sticky-header">
-            <div class="header-left">
-                <button class="icon-btn" id="menu-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-                </button>
-                <h1>Salary Tracker</h1>
-            </div>
-            <div class="header-right">
-                <!-- Theme switcher will be here -->
-            </div>
+        <header>
+            <h1>Salary Tracker</h1>
         </header>
         <div class="dashboard-layout">
             <main class="main-content">
@@ -60,8 +52,28 @@
                             <div id="gearAnimation"></div>
                         </div>
                     </div>
-                    <div class="metrics-grid" id="kpi-grid">
-                        <!-- KPI cards will be dynamically generated here -->
+                    <!-- Key Metrics Block -->
+                    <div class="analytics-block">
+                        <div class="block-content">
+                            <div class="metrics-grid">
+                                <div class="metric-item">
+                                    <div class="metric-label">Total Income</div>
+                                    <div class="metric-value" id="totalIncome">-</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Total Hours</div>
+                                    <div class="metric-value" id="totalHours">-</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Avg Monthly Income</div>
+                                    <div class="metric-value" id="avgMonthlyIncome">-</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Avg Hourly Rate</div>
+                                    <div class="metric-value" id="averageHourlyRate">-</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -71,16 +83,8 @@
                         <div class="chart-title-container">
                             <h2>Monthly Income</h2>
                         </div>
-                        <div class="chart-controls">
-                            <select id="chart-time-range">
-                                <option value="6months">Last 6 Months</option>
-                                <option value="year">This Year</option>
-                                <option value="all">All Time</option>
-                            </select>
-                            <div class="toggle-buttons">
-                                <button class="toggle-btn active" data-chart-type="line">Line</button>
-                                <button class="toggle-btn" data-chart-type="bar">Bar</button>
-                            </div>
+                        <div class="settings-gear" id="monthlyIncomeSettingsBtn">
+                            <div id="gearAnimation"></div>
                         </div>
                     </div>
                     <canvas id="salaryChart"></canvas>
@@ -88,19 +92,18 @@
 
                 <!-- Salary History Section -->
                 <section class="history-section">
-                    <div class="section-header">
-                        <h2>Salary History</h2>
-                        <input type="text" id="table-filter" placeholder="Filter table...">
-                    </div>
+                    <h2>Salary History</h2>
                     <div class="table-container">
                         <table id="salaryHistoryTable">
                             <thead>
                                 <tr>
-                                    <th data-sort="month">Month</th>
-                                    <th data-sort="job">Job</th>
-                                    <th data-sort="salary">Salary (UAH)</th>
-                                    <th data-sort="hours">Hours</th>
-                                    <th data-sort="hourlyRate">Hourly Rate</th>
+                                    <th>Month</th>
+                                    <th>Job</th>
+                                    <th>Salary (UAH)</th>
+                                    <th>Hours</th>
+                                    <th>Hourly Rate</th>
+                                    <th>Salary Diff</th>
+                                    <th>Rate Diff</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -109,6 +112,7 @@
                             </tbody>
                         </table>
                     </div>
+                    <button id="clearAllData" class="danger-button">Clear All Data</button>
                 </section>
             </main>
             <aside class="sidebar">
@@ -163,16 +167,14 @@
                             <span class="label">Hourly Rate:</span>
                             <span id="currentHourlyRate" class="tooltip-trigger">-</span>
                         </div>
+                        <div class="stat-item">
+                            <span class="label">Difference:</span>
+                            <span id="currentDifference" class="tooltip-trigger">-</span>
+                        </div>
                     </div>
                 </section>
             </aside>
         </div>
-    </div>
-    <footer class="app-footer">
-        <button id="clearAllData" class="danger-button">Clear All Data</button>
-        <button id="exportDataBtn" class="settings-button">Export Data</button>
-        <p>&copy; 2024 Salary Tracker</p>
-    </footer>
 >>>>>>> Stashed changes
     <!-- Tooltip element for displaying additional information on hover -->
     <div class="tooltip" id="tooltip"></div>
