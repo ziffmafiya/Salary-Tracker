@@ -165,7 +165,7 @@ h3 {
 }
 
 .metric-label {
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Tektur', sans-serif;
     font-size: 13px;
     font-weight: 500;
     color: var(--text-secondary);
@@ -586,8 +586,8 @@ h3 {
 }
 
 .notable-list {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 10px;
 }
 
