@@ -1326,15 +1326,30 @@ tbody tr:nth-child(even) {
 /* Settings */
 .settings-container {
     display: flex;
-    justify-content: center;
+    flex-direction: column; /* Stack buttons vertically */
     gap: 15px;
-    margin-bottom: 30px;
+    margin-top: 20px; /* Add some space from the statistics section */
+    padding: 20px; /* Add padding to match other sections */
+    background-color: #FFFFFF; /* Match other section backgrounds */
+    border-radius: 12px; /* Match other section border-radius */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Match other section shadow */
 }
 
 .settings-button {
-    background-color: #333333;
-    padding: 10px 20px;
+    background-color: #4A55E1; /* Use a primary button color */
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
     transition: background-color 0.3s ease;
+    width: 100%; /* Make buttons take full width */
+}
+
+.settings-button:hover {
+    background-color: #434db5; /* Darker shade on hover */
 }
 
 .settings-button:hover {
@@ -1496,32 +1511,44 @@ tbody tr:nth-child(even) {
 footer {
     margin-top: 30px;
     padding: 15px;
-    background-color: #111111;
-    color: #cccccc;
+    background-color: var(--bg-secondary); /* Use theme variable */
+    color: var(--text-primary); /* Use theme variable */
     text-align: center;
-    border-radius: 5px;
+    border-radius: 12px; /* Match other sections */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Match other sections */
 }
 
 .base-info {
-    font-size: 12px;
-    font-weight: 400;
+    font-size: 14px; /* Slightly larger font */
+    font-weight: 500;
     line-height: 1.6;
+    color: var(--text-primary); /* Ensure text color is correct */
+    margin-bottom: 10px; /* Space between title and container */
+}
+
+.base-info > div:first-child {
+    font-size: 18px; /* Make the title more prominent */
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--text-primary);
 }
 
 .base-rates-container {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 15px;
+    gap: 10px; /* Slightly smaller gap */
     margin-top: 10px;
 }
 
 .base-rate-item {
-    background-color: #1a1a1a;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 11px;
-    border-left: 3px solid #4CAF50;
+    background-color: var(--bg-tertiary); /* Use theme variable */
+    padding: 8px 12px; /* More padding */
+    border-radius: 8px; /* Match other elements */
+    font-size: 12px; /* Slightly larger font */
+    border-left: 4px solid var(--accent-primary); /* Use theme variable */
+    color: var(--text-primary); /* Ensure text color is correct */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Subtle shadow */
 }
 
 @media (max-width: 768px) {

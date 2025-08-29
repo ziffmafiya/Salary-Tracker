@@ -125,12 +125,16 @@ class SalaryTracker {
         this.updateSalaryHistory(); // Вызывается после инициализации analyticsSettings.includedJobs
         this.updateGeneralAnalytics();
         this.updateIncomeAnalysis();
-        this.updateBaseRatesInfo();
+        this.updateBaseRatesInfo(); // Вызывается здесь
 
         // Set current job to first job if available
         if (this.jobs.length > 0) {
             this.currentJobId = this.jobs[0].id;
             this.updateStatistics();
+        } else {
+            // If no jobs, clear statistics and base rates info
+            this.updateStatistics();
+            this.updateBaseRatesInfo();
         }
     }
 
