@@ -1327,18 +1327,18 @@ tbody tr:nth-child(even) {
 .settings-container {
     display: flex;
     flex-direction: column; /* Stack buttons vertically */
-    gap: 15px;
-    margin-top: 20px; /* Add some space from the statistics section */
-    padding: 20px; /* Add padding to match other sections */
-    background-color: #FFFFFF; /* Match other section backgrounds */
+    gap: 10px; /* Уменьшен зазор */
+    margin-top: 15px; /* Уменьшен верхний отступ */
+    padding: 15px; /* Уменьшен внутренний отступ */
+    background-color: var(--bg-secondary); /* Match other section backgrounds */
     border-radius: 12px; /* Match other section border-radius */
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Match other section shadow */
+    box-shadow: 0 2px 10px var(--shadow-color); /* Match other section shadow */
 }
 
 .settings-button {
-    background-color: #4A55E1; /* Use a primary button color */
+    background-color: var(--accent-primary); /* Use a primary button color */
     color: white;
-    padding: 12px 20px;
+    padding: 10px 15px; /* Уменьшен внутренний отступ кнопок */
     border: none;
     border-radius: 8px;
     font-family: 'Inter', sans-serif;
@@ -1349,11 +1349,7 @@ tbody tr:nth-child(even) {
 }
 
 .settings-button:hover {
-    background-color: #434db5; /* Darker shade on hover */
-}
-
-.settings-button:hover {
-    background-color: #4CAF50;
+    background-color: var(--accent-secondary); /* Darker shade on hover */
 }
 
 #exportDataBtn {
