@@ -12,6 +12,6 @@ jobs:
     steps:
       - name: Send keep-alive request
         run: |
-          curl -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/jobs?select=*" \
+          curl -s -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/jobs?select=*" \
           -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" > /dev/null
