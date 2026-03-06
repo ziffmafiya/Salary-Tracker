@@ -1,0 +1,17 @@
+name: Keep Supabase Awake
+
+on:
+  schedule:
+    # Запуск в 00:00 каждые 4 дня
+    - cron: '0 0 */4 * *'
+  workflow_dispatch: # Позволяет запустить вручную для проверки
+
+jobs:
+  ping_supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send keep-alive request
+        run: |
+          curl -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/jobs?select=*" \
+          -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
