@@ -1,7 +1,5 @@
-// config.example.js
-// This is an example configuration file for local development
-// Copy this to config.js and replace with your actual Supabase credentials
-// NEVER commit config.js to git - it's in .gitignore
+// Copy this file to config.js and fill in your credentials for local development.
+// NEVER commit config.js — it is in .gitignore.
 
 const SUPABASE_URL = 'https://your-project.supabase.co';
 const SUPABASE_ANON_KEY = 'your-anon-key-here';

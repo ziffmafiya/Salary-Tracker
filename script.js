@@ -1,11 +1,7 @@
 class SalaryTracker {
     constructor() {
-        // Read credentials from environment variables injected by Vercel
-        const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || window.ENV?.VITE_SUPABASE_URL;
-        const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || window.ENV?.VITE_SUPABASE_ANON_KEY;
-
-        if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-            console.error('Missing Supabase credentials. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel environment variables.');
+        if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_ANON_KEY === 'undefined' || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
+            console.error('Missing Supabase credentials. Set SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, or create config.js locally.');
             alert('Configuration error. Please contact the administrator.');
             return;
         }
