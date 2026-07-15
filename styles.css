@@ -1167,6 +1167,28 @@ button[type="submit"] {
     margin-bottom: 20px;
 }
 
+.hidden-entry {
+    display: none;
+}
+
+.toggle-history-btn {
+    display: block;
+    margin: 10px auto 0;
+    padding: 8px 20px;
+    background: none;
+    border: 1px solid var(--accent-color, #3B82F6);
+    color: var(--accent-color, #3B82F6);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.toggle-history-btn:hover {
+    background: var(--accent-color, #3B82F6);
+    color: #fff;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;

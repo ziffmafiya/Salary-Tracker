@@ -804,6 +804,39 @@ class SalaryTracker {
             // Append row to table
             tableBody.appendChild(row);
         });
+
+        // Show only last 10 entries, hide the rest with toggle
+        const rows = tableBody.querySelectorAll('tr');
+        if (rows.length > 10) {
+            rows.forEach((row, index) => {
+                if (index >= 10) {
+                    row.classList.add('hidden-entry');
+                }
+            });
+
+            let toggleBtn = document.querySelector('#salaryHistoryToggle');
+            if (!toggleBtn) {
+                toggleBtn = document.createElement('button');
+                toggleBtn.id = 'salaryHistoryToggle';
+                toggleBtn.className = 'toggle-history-btn';
+                toggleBtn.textContent = `Show all (${rows.length - 10} more)`;
+                toggleBtn.addEventListener('click', () => {
+                    const hiddenRows = tableBody.querySelectorAll('.hidden-entry');
+                    const isHidden = hiddenRows.length > 0;
+                    hiddenRows.forEach(row => row.classList.toggle('hidden-entry'));
+                    toggleBtn.textContent = isHidden
+                        ? `Show all (${rows.length - 10} more)`
+                        : 'Show less';
+                });
+                const tableContainer = document.querySelector('.table-container');
+                tableContainer.appendChild(toggleBtn);
+            } else {
+                toggleBtn.textContent = `Show all (${rows.length - 10} more)`;
+            }
+        } else {
+            const toggleBtn = document.querySelector('#salaryHistoryToggle');
+            if (toggleBtn) toggleBtn.remove();
+        }
     }
 
     openEditEntryModal(entry) {
