@@ -742,31 +742,39 @@ class SalaryTracker {
                 hourlyRatePercentChange = ((hourlyRate - prevHourlyRate) / prevHourlyRate) * 100;
             }
 
-            // Create cells
+            // Create cells (data-label used for mobile card layout)
             const monthCell = document.createElement('td');
+            monthCell.setAttribute('data-label', 'Month');
             monthCell.textContent = formattedMonth;
 
             const jobCell = document.createElement('td');
+            jobCell.setAttribute('data-label', 'Job');
             jobCell.textContent = job.name;
 
             const salaryCell = document.createElement('td');
+            salaryCell.setAttribute('data-label', 'Salary');
             salaryCell.textContent = `${entry.salary.toFixed(2)} UAH`;
 
             const hoursCell = document.createElement('td');
+            hoursCell.setAttribute('data-label', 'Hours');
             hoursCell.textContent = entry.hours;
 
             const hourlyRateCell = document.createElement('td');
+            hourlyRateCell.setAttribute('data-label', 'Hourly Rate');
             hourlyRateCell.textContent = `${hourlyRate.toFixed(2)} UAH/h`;
 
             const salaryDiffCell = document.createElement('td');
+            salaryDiffCell.setAttribute('data-label', 'Salary Diff');
             salaryDiffCell.textContent = `${salaryDiff >= 0 ? '+' : ''}${salaryDiff.toFixed(2)}`;
             salaryDiffCell.className = salaryDiff >= 0 ? 'positive' : 'negative';
 
             const rateDiffCell = document.createElement('td');
+            rateDiffCell.setAttribute('data-label', 'Rate Diff');
             rateDiffCell.textContent = `${rateDiff >= 0 ? '+' : ''}${rateDiff.toFixed(2)} UAH/h`;
             rateDiffCell.className = rateDiff >= 0 ? 'positive' : 'negative';
 
             const actionCell = document.createElement('td');
+            actionCell.setAttribute('data-label', 'Action');
             actionCell.className = 'action-cell';
 
             // Create edit button with icon
