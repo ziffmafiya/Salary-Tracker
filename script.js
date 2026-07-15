@@ -805,11 +805,11 @@ class SalaryTracker {
             tableBody.appendChild(row);
         });
 
-        // Show only last 10 entries, hide the rest with toggle
+        // Show only last 5 entries, hide the rest with toggle
         const rows = tableBody.querySelectorAll('tr');
-        if (rows.length > 10) {
+        if (rows.length > 5) {
             rows.forEach((row, index) => {
-                if (index >= 10) {
+                if (index >= 5) {
                     row.classList.add('hidden-entry');
                 }
             });
@@ -819,19 +819,19 @@ class SalaryTracker {
                 toggleBtn = document.createElement('button');
                 toggleBtn.id = 'salaryHistoryToggle';
                 toggleBtn.className = 'toggle-history-btn';
-                toggleBtn.textContent = `Show all (${rows.length - 10} more)`;
+                toggleBtn.textContent = `Show all (${rows.length - 5} more)`;
                 toggleBtn.addEventListener('click', () => {
                     const hiddenRows = tableBody.querySelectorAll('.hidden-entry');
                     const isHidden = hiddenRows.length > 0;
                     hiddenRows.forEach(row => row.classList.toggle('hidden-entry'));
                     toggleBtn.textContent = isHidden
-                        ? `Show all (${rows.length - 10} more)`
-                        : 'Show less';
+                        ? 'Show less'
+                        : `Show all (${rows.length - 5} more)`;
                 });
                 const tableContainer = document.querySelector('.table-container');
                 tableContainer.appendChild(toggleBtn);
             } else {
-                toggleBtn.textContent = `Show all (${rows.length - 10} more)`;
+                toggleBtn.textContent = `Show all (${rows.length - 5} more)`;
             }
         } else {
             const toggleBtn = document.querySelector('#salaryHistoryToggle');
