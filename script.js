@@ -324,6 +324,15 @@ class SalaryTracker {
             this.exportData();
         });
 
+        // Overview details toggle
+        const overviewToggle = document.getElementById('overviewToggle');
+        const overviewDetails = document.getElementById('overviewDetails');
+        if (overviewToggle && overviewDetails) {
+            overviewToggle.addEventListener('click', () => {
+                const isHidden = overviewDetails.classList.toggle('visible');
+                overviewToggle.textContent = isHidden ? 'Hide details' : 'Show details';
+            });
+        }
 
     }
 
