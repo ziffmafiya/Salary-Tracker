@@ -1,7 +1,4 @@
 {
   "name": "salary-tracker",
-  "private": true,
-  "scripts": {
-    "build": "node scripts/generate-config.js"
-  }
+  "private": true
 }

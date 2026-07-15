@@ -1,4 +1,7 @@
-# Ignore the config file with Supabase keys
-config.js
+# Secrets / local config (root only — do not ignore api/config.js)
+/config.js
 .env
 .env.local
+
+# Dependencies
+node_modules/
