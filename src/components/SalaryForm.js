@@ -80,13 +80,27 @@ export class SalaryForm {
 
         const existing = this._state.entries.find(e => e.job_id === jobId && e.month === month);
 
-        try {
-            if (existing) {
-                if (!confirm('An entry for this job and month already exists. Update it?')) return;
+        if (existing) {
+            if (!confirm('An entry for this job and month already exists. Update it?')) return;
+
+            const idx = this._state.entries.findIndex(e => e.id === existing.id);
+            const original = this._state.entries[idx];
+
+            // Optimistic update
+            this._state.entries[idx] = { ...original, salary, hours };
+
+            try {
                 const updated = await this._db.updateEntry(existing.id, { salary, hours });
-                const idx = this._state.entries.findIndex(e => e.id === existing.id);
                 this._state.entries[idx] = updated;
-            } else {
+                EventBus.emit(Events.ENTRIES_CHANGED);
+            } catch (err) {
+                // Roll back on failure
+                this._state.entries[idx] = original;
+                console.error('Error updating entry:', err);
+                alert('Failed to update entry. Please try again.');
+            }
+        } else {
+            try {
                 const created = await this._db.createEntry({ jobId, month, salary, hours });
                 this._state.entries.push(created);
                 this._state.currentJobId = jobId;
@@ -94,11 +108,11 @@ export class SalaryForm {
 
                 el('salary').value = '';
                 this.setDefaultMonthYear();
+                EventBus.emit(Events.ENTRIES_CHANGED);
+            } catch (err) {
+                console.error('Error saving entry:', err);
+                alert('Failed to save entry. Please try again.');
             }
-
-            EventBus.emit(Events.ENTRIES_CHANGED);
-        } catch (err) {
-            console.error('Error saving entry:', err);
         }
     }
 

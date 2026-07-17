@@ -2,8 +2,10 @@
  * MemoizedFilter — caches results of filterEntries() calls.
  *
  * Cache key is derived from:
- *   - entries array length (cheap change-detection proxy)
- *   - serialised analytics settings (period + includedJobs)
+ *   - a checksum over all entry salary+hours values (detects edits within
+ *     the same-length array — fixes the stale-data bug where entries.length
+ *     alone could not distinguish a salary edit from an unchanged state)
+ *   - serialised analytics settings (period + includedJobs + date range)
  *
  * The cache is bounded to MAX_SIZE entries; the oldest entry is evicted
  * when the limit is exceeded (simple FIFO via insertion order of Map).
@@ -55,9 +57,11 @@ export class MemoizedFilter {
     // ── Private ────────────────────────────────────────────────────────────────
 
     _key(entries, settings) {
-        // entries.length is O(1); JSON.stringify(settings) is small (~100 chars).
-        // Together they uniquely identify the filter inputs for our use-case.
-        return `${entries.length}|${settings.period}|${(settings.includedJobs || []).join(',')}|${settings.customStartDate || ''}|${settings.customEndDate || ''}`;
+        // A lightweight checksum over salary+hours values detects edits within
+        // a same-length array (e.g. updating a salary without adding/removing rows).
+        // Each value is rounded to avoid floating-point noise producing false misses.
+        const checksum = entries.reduce((s, e) => s + Math.round(e.salary * 100) + e.hours, 0);
+        return `${entries.length}:${checksum}|${settings.period}|${(settings.includedJobs || []).join(',')}|${settings.customStartDate || ''}|${settings.customEndDate || ''}`;
     }
 }
 

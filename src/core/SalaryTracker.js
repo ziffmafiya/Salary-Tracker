@@ -27,8 +27,6 @@ import { Tooltip }            from '../components/Tooltip.js';
 import { JobSettingsModal }   from '../components/modals/JobSettingsModal.js';
 import { AnalyticsModal }     from '../components/modals/AnalyticsModal.js';
 
-import { filterEntries }      from '../services/AnalyticsService.js';
-
 export class SalaryTracker {
     constructor() {
         // Validate config injected by config.js / api/config.js
@@ -79,9 +77,6 @@ export class SalaryTracker {
         // Always start with all jobs included in analytics
         this.state.analyticsSettings.includedJobs = this.state.jobs.map(j => j.id);
 
-        // Expose filterEntries for HistoryTable (avoids circular imports at bundle level)
-        window._analyticsService = { filterEntries };
-
         this._createComponents();
         this._render();
     }
@@ -126,9 +121,12 @@ export class SalaryTracker {
             }
 
             if (oldEntries) {
+                const oldJobMap = new Map(oldJobs.map(j => [j.id, j]));
+                const newJobMap = new Map(this.state.jobs.map(j => [j.name, j]));
+
                 const rows = oldEntries.map(entry => {
-                    const oldJob = oldJobs.find(j => j.id === entry.jobId);
-                    const newJob = this.state.jobs.find(j => j.name === oldJob?.name);
+                    const oldJob = oldJobMap.get(entry.jobId);
+                    const newJob = newJobMap.get(oldJob?.name);
                     return { job_id: newJob?.id, month: entry.month, salary: entry.salary, hours: entry.hours };
                 }).filter(r => r.job_id);
 

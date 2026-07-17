@@ -29,7 +29,8 @@ export class StatisticsPanel {
 
     render() {
         const { currentJobId, jobs, entries } = this._state;
-        const job   = jobs.find(j => j.id === currentJobId);
+        const jobMap = new Map(jobs.map(j => [j.id, j]));
+        const job   = jobMap.get(currentJobId);
         const entry = this._getLatestEntry(currentJobId, entries ?? []);
 
         const title = el('statisticsTitle');

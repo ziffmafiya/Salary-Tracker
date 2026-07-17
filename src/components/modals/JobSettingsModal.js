@@ -84,9 +84,11 @@ export class JobSettingsModal extends BaseModal {
             el('editJobModal').querySelector('.close-modal').addEventListener('click', () => {
                 el('editJobModal').style.display = 'none';
             });
+            // AbortController so this listener can be cleaned up if needed
+            this._editModalController = new AbortController();
             window.addEventListener('click', (e) => {
                 if (e.target === el('editJobModal')) el('editJobModal').style.display = 'none';
-            });
+            }, { signal: this._editModalController.signal });
             this._editFormBound = true;
         }
 
@@ -102,15 +104,23 @@ export class JobSettingsModal extends BaseModal {
         const { valid, errors } = validateJob({ name, baseRate, baseHours });
         if (!valid) { alert(errors.join('\n')); return; }
 
+        const idx = this._state.jobs.findIndex(j => j.id === id);
+        const original = this._state.jobs[idx];
+
+        // Optimistic update
+        this._state.jobs[idx] = { ...original, name, baseRate, baseHours };
+
         try {
             const updated = await this._db.updateJob(id, { name, baseRate, baseHours });
-            const idx = this._state.jobs.findIndex(j => j.id === id);
-            if (idx !== -1) this._state.jobs[idx] = updated;
+            this._state.jobs[idx] = updated;
 
             el('editJobModal').style.display = 'none';
             EventBus.emit(Events.JOBS_CHANGED);
         } catch (err) {
+            // Roll back on failure
+            this._state.jobs[idx] = original;
             console.error('Error updating job:', err);
+            alert('Failed to save job changes. Please try again.');
         }
     }
 
@@ -139,6 +149,7 @@ export class JobSettingsModal extends BaseModal {
             EventBus.emit(Events.JOBS_CHANGED);
         } catch (err) {
             console.error('Error adding job:', err);
+            alert('Failed to add job. Please try again.');
         }
     }
 
@@ -150,28 +161,45 @@ export class JobSettingsModal extends BaseModal {
 
         if (!confirm(message)) return;
 
+        // Snapshot state for rollback
+        const originalJobs    = [...this._state.jobs];
+        const originalEntries = [...this._state.entries];
+        const originalJobId   = this._state.currentJobId;
+        const originalChartView = this._state.currentChartView;
+
+        // Optimistic removal
+        if (hasEntries) {
+            this._state.entries = this._state.entries.filter(e => e.jobId !== jobId);
+        }
+        this._state.jobs = this._state.jobs.filter(j => j.id !== jobId);
+
+        if (this._state.currentJobId === jobId) {
+            this._state.currentJobId = this._state.jobs.length > 0 ? this._state.jobs[0].id : null;
+        }
+        if (this._state.currentChartView === jobId) {
+            this._state.currentChartView = 'overall';
+        }
+
+        this._renderJobList();
+        EventBus.emit(Events.JOBS_CHANGED);
+        if (hasEntries) EventBus.emit(Events.ENTRIES_CHANGED);
+
         try {
-            if (hasEntries) {
-                await this._db.deleteEntriesByJob(jobId);
-                this._state.entries = this._state.entries.filter(e => e.jobId !== jobId);
-            }
-
+            if (hasEntries) await this._db.deleteEntriesByJob(jobId);
             await this._db.deleteJob(jobId);
-            this._state.jobs = this._state.jobs.filter(j => j.id !== jobId);
-
-            if (this._state.currentJobId === jobId) {
-                this._state.currentJobId = this._state.jobs.length > 0 ? this._state.jobs[0].id : null;
-            }
-
-            if (this._state.currentChartView === jobId) {
-                this._state.currentChartView = 'overall';
-            }
+        } catch (err) {
+            // Roll back everything on failure
+            this._state.jobs           = originalJobs;
+            this._state.entries        = originalEntries;
+            this._state.currentJobId   = originalJobId;
+            this._state.currentChartView = originalChartView;
 
             this._renderJobList();
             EventBus.emit(Events.JOBS_CHANGED);
-            EventBus.emit(Events.ENTRIES_CHANGED);
-        } catch (err) {
+            if (hasEntries) EventBus.emit(Events.ENTRIES_CHANGED);
+
             console.error('Error deleting job:', err);
+            alert('Failed to delete job. Please try again.');
         }
     }
 }

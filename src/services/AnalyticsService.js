@@ -84,10 +84,12 @@ function _filterEntries(entries, settings) {
  * @returns {Object.<string, { name: string, entries: Entry[], totalIncome: number, totalHours: number }>}
  */
 export function groupBySource(entries, jobs) {
+    // O(1) lookup instead of jobs.find() per entry
+    const jobMap = new Map(jobs.map(j => [j.id, j]));
     const sourceData = {};
 
     entries.forEach(entry => {
-        const job = jobs.find(j => j.id === entry.jobId);
+        const job = jobMap.get(entry.jobId);
         if (!job) return;
 
         if (!sourceData[entry.jobId]) {

@@ -18,6 +18,9 @@ export function exportData(jobs, entries) {
 
     const incomeSources = jobs.map(job => ({ id: job.id, label: job.name }));
 
+    // O(1) job lookup for the records loop below
+    const jobMap = new Map(jobs.map(j => [j.id, j]));
+
     // Group entries by month
     const entriesByMonth = {};
     [...entries].sort((a, b) => a.month.localeCompare(b.month)).forEach(entry => {
@@ -40,7 +43,7 @@ export function exportData(jobs, entries) {
         }));
 
         const notesArray = monthEntries.map(entry => {
-            const job = jobs.find(j => j.id === entry.jobId);
+            const job = jobMap.get(entry.jobId);
             return job ? `${job.name}: ${entry.hours}ч` : `${entry.hours}ч`;
         });
         const notes = notesArray.length > 1 ? notesArray.join(', ') : '';

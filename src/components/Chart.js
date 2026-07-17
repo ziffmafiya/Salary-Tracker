@@ -190,13 +190,16 @@ export class ChartComponent {
     }
 
     _buildBaseData(months, filtered, jobs, chartType) {
+        // Build map once — avoids O(entries × jobs) find() inside reduce
+        const jobMap = new Map(jobs.map(j => [j.id, j]));
+
         return months.map(month => {
             const monthEntries = filtered.filter(e => e.month === month);
             if (monthEntries.length === 0) return 0;
 
             if (chartType === 'salary') {
                 return monthEntries.reduce((sum, entry) => {
-                    const job = jobs.find(j => j.id === entry.jobId);
+                    const job = jobMap.get(entry.jobId);
                     if (!job) return sum;
                     return sum + (baseHourlyRate(job) * entry.hours);
                 }, 0);
@@ -207,7 +210,7 @@ export class ChartComponent {
             if (totalHours === 0) return 0;
 
             const weightedBase = monthEntries.reduce((sum, entry) => {
-                const job = jobs.find(j => j.id === entry.jobId);
+                const job = jobMap.get(entry.jobId);
                 if (!job) return sum;
                 return sum + (baseHourlyRate(job) * entry.hours);
             }, 0);
@@ -281,9 +284,11 @@ export class ChartComponent {
         modal.querySelector('.close-modal').addEventListener('click', () => {
             modal.style.display = 'none';
         });
+        // AbortController — one listener, cleanly removable
+        this._settingsModalController = new AbortController();
         window.addEventListener('click', (e) => {
             if (e.target === modal) modal.style.display = 'none';
-        });
+        }, { signal: this._settingsModalController.signal });
 
         el('applyMonthlyIncomeSettings').addEventListener('click', () => this._applySettings());
         el('resetMonthlyIncomeSettings').addEventListener('click', () => this._resetSettings());

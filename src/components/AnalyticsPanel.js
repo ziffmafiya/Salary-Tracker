@@ -111,15 +111,16 @@ export class AnalyticsPanel {
             text += `  End Date: ${s.customEndDate || 'N/A'}\n`;
         }
 
-    // Исправляем deadcode: переменная _ никогда не используется
-    const { includedJobs } = s;
+        const { includedJobs } = s;
         if (includedJobs.length === this._state.jobs.length) {
             text += 'Jobs: All Jobs Included\n';
         } else if (includedJobs.length === 0) {
             text += 'Jobs: No Jobs Included\n';
         } else {
-            const names = includedJobs
-                .map(id => this._state.jobs.find(j => j.id === id)?.name)
+            // Build Map once — O(jobs), not O(includedJobs × jobs)
+            const jobMap = new Map(this._state.jobs.map(j => [j.id, j]));
+            const names  = includedJobs
+                .map(id => jobMap.get(id)?.name)
                 .filter(Boolean)
                 .join(', ');
             text += `Jobs: ${names}\n`;
