@@ -32,9 +32,10 @@ export class BaseModal {
         }, { signal: this._backdropController.signal });
     }
 
-    /** Show the modal. */
+    /** Show the modal and scroll to top. */
     open() {
         this._element.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     /** Hide the modal. */

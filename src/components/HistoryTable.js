@@ -45,16 +45,21 @@ export class HistoryTable {
 
         // Per-job sorted arrays for % change calculation
         const byJob = {};
+        const entryIndexMap = {};
         filtered.forEach(e => {
             if (!byJob[e.jobId]) byJob[e.jobId] = [];
             byJob[e.jobId].push(e);
         });
-        Object.values(byJob).forEach(arr => arr.sort((a, b) => a.month.localeCompare(b.month)));
+        Object.entries(byJob).forEach(([jobId, arr]) => {
+            arr.sort((a, b) => a.month.localeCompare(b.month));
+            entryIndexMap[jobId] = new Map(arr.map((e, i) => [e.id, i]));
+        });
 
         filtered.forEach(entry => {
             const job = jobMap.get(entry.jobId);
             if (!job) return;
-            tbody.appendChild(this._buildRow(entry, job, byJob[entry.jobId]));
+            const idx = entryIndexMap[entry.jobId]?.get(entry.id) ?? -1;
+            tbody.appendChild(this._buildRow(entry, job, idx, byJob[entry.jobId]));
         });
 
         this._applyToggle(tbody);
@@ -62,14 +67,13 @@ export class HistoryTable {
 
     // ── Private ───────────────────────────────────────────────────────────────
 
-    _buildRow(entry, job, jobEntries) {
+    _buildRow(entry, job, idx, jobEntries) {
         const rate         = hourlyRate(entry.salary, entry.hours);
         const baseRate     = baseHourlyRate(job);
         const baseSalary   = baseSalaryForHours(job, entry.hours);
         const salaryDiff   = entry.salary - baseSalary;
         const rateDiff     = rate - baseRate;
 
-        const idx      = jobEntries.findIndex(e => e.id === entry.id);
         const prev     = idx > 0 ? jobEntries[idx - 1] : null;
         const prevRate = prev ? hourlyRate(prev.salary, prev.hours) : null;
 

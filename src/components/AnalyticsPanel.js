@@ -81,6 +81,10 @@ export class AnalyticsPanel {
             toggle.addEventListener('click', () => {
                 const visible = details.classList.toggle('visible');
                 toggle.textContent = visible ? 'Hide details' : 'Show details';
+                if (visible) {
+                    // Scroll to the overview details section so the expanded content is in view
+                    setTimeout(() => details.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+                }
             });
         }
     }

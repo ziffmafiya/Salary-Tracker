@@ -279,6 +279,7 @@ export class ChartComponent {
         el('monthlyIncomeSettingsBtn').addEventListener('click', () => {
             this.populateViewSelect();
             modal.style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
 
         modal.querySelector('.close-modal').addEventListener('click', () => {
