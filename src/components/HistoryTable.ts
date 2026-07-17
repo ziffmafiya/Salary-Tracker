@@ -19,6 +19,8 @@ export class HistoryTable {
     private _db: SupabaseService;
     private _state: HistoryState;
     private _modalController: AbortController;
+    private _currentPage = 1;
+    private _pageSize = 10;
 
     constructor(supabaseService: SupabaseService, state: HistoryState) {
         this._db = supabaseService;
@@ -28,9 +30,9 @@ export class HistoryTable {
         this._bindEditForm();
         this._bindClearAll();
 
-        EventBus.on(Events.ENTRIES_CHANGED, () => this.render());
-        EventBus.on(Events.JOBS_CHANGED,    () => this.render());
-        EventBus.on(Events.ANALYTICS_SETTINGS_CHANGED, () => this.render());
+        EventBus.on(Events.ENTRIES_CHANGED,             () => { this._currentPage = 1; this.render(); });
+        EventBus.on(Events.JOBS_CHANGED,                () => { this._currentPage = 1; this.render(); });
+        EventBus.on(Events.ANALYTICS_SETTINGS_CHANGED,  () => { this._currentPage = 1; this.render(); });
     }
 
     render(): void {
@@ -38,7 +40,6 @@ export class HistoryTable {
         tbody.innerHTML = '';
 
         const { entries, jobs, analyticsSettings } = this._state;
-
         const jobMap = new Map(jobs.map(j => [j.id, j]));
 
         const filtered = filterEntries(entries, analyticsSettings);
@@ -55,14 +56,70 @@ export class HistoryTable {
             entryIndexMap[jobId] = new Map(arr.map((e, i) => [e.id, i]));
         });
 
-        filtered.forEach(entry => {
+        const totalPages = Math.max(1, Math.ceil(filtered.length / this._pageSize));
+        if (this._currentPage > totalPages) this._currentPage = totalPages;
+        const start = (this._currentPage - 1) * this._pageSize;
+        const pageEntries = filtered.slice(start, start + this._pageSize);
+
+        pageEntries.forEach(entry => {
             const job = jobMap.get(entry.jobId);
             if (!job) return;
             const idx = entryIndexMap[entry.jobId]?.get(entry.id) ?? -1;
             tbody.appendChild(this._buildRow(entry, job, idx, byJob[entry.jobId]));
         });
 
-        this._applyToggle(tbody);
+        this._renderPagination(filtered.length);
+    }
+
+    private _renderPagination(totalItems: number): void {
+        const container = document.querySelector('.table-container')!;
+        const existing = container.querySelector('.pagination');
+        if (existing) existing.remove();
+
+        const totalPages = Math.max(1, Math.ceil(totalItems / this._pageSize));
+        if (totalPages <= 1) return;
+
+        const wrapper = createElement('div', { className: 'pagination' });
+
+        const prevBtn = createElement('button', { textContent: '‹ Prev' }) as HTMLButtonElement;
+        prevBtn.disabled = this._currentPage <= 1;
+        prevBtn.addEventListener('click', () => { this._currentPage--; this.render(); });
+        wrapper.appendChild(prevBtn);
+
+        const range = this._getPageRange(this._currentPage, totalPages, 5);
+        range.forEach(p => {
+            if (p === 0) {
+                wrapper.appendChild(createElement('span', { textContent: '…', className: 'page-info' }));
+                return;
+            }
+            const btn = createElement('button', { textContent: String(p) }) as HTMLButtonElement;
+            if (p === this._currentPage) btn.className = 'active';
+            btn.addEventListener('click', () => { this._currentPage = p; this.render(); });
+            wrapper.appendChild(btn);
+        });
+
+        const nextBtn = createElement('button', { textContent: 'Next ›' }) as HTMLButtonElement;
+        nextBtn.disabled = this._currentPage >= totalPages;
+        nextBtn.addEventListener('click', () => { this._currentPage++; this.render(); });
+        wrapper.appendChild(nextBtn);
+
+        container.appendChild(wrapper);
+    }
+
+    private _getPageRange(current: number, total: number, maxVisible: number): number[] {
+        if (total <= maxVisible) {
+            return Array.from({ length: total }, (_, i) => i + 1);
+        }
+        const half = Math.floor(maxVisible / 2);
+        let start = current - half;
+        let end = current + half;
+        if (start < 1) { start = 1; end = maxVisible; }
+        if (end > total) { end = total; start = total - maxVisible + 1; }
+        const pages: number[] = [];
+        if (start > 1) { pages.push(1); if (start > 2) pages.push(0); }
+        for (let i = start; i <= end; i++) pages.push(i);
+        if (end < total) { if (end < total - 1) pages.push(0); pages.push(total); }
+        return pages;
     }
 
     private _buildRow(entry: Entry, job: Job, idx: number, jobEntries: Entry[]): HTMLTableRowElement {
@@ -116,35 +173,6 @@ export class HistoryTable {
         td.appendChild(editBtn);
         td.appendChild(delBtn);
         return td;
-    }
-
-    private _applyToggle(tbody: HTMLElement): void {
-        const rows = tbody.querySelectorAll('tr');
-        const LIMIT = 5;
-
-        const old = document.querySelector('#salaryHistoryToggle');
-        if (old) old.remove();
-
-        if (rows.length <= LIMIT) return;
-
-        rows.forEach((row, i) => {
-            if (i >= LIMIT) row.classList.add('hidden-entry');
-        });
-
-        const btn = createElement('button', {
-            className: 'toggle-history-btn',
-            textContent: `Show all (${rows.length - LIMIT} more)`,
-        });
-        btn.id = 'salaryHistoryToggle';
-
-        btn.addEventListener('click', () => {
-            const hidden = tbody.querySelectorAll('.hidden-entry');
-            const showing = hidden.length > 0;
-            hidden.forEach(r => r.classList.toggle('hidden-entry'));
-            btn.textContent = showing ? 'Show less' : `Show all (${rows.length - LIMIT} more)`;
-        });
-
-        document.querySelector('.table-container')!.appendChild(btn);
     }
 
     private _bindModalClose(): void {

@@ -3,6 +3,7 @@ import { EventBus, Events } from './EventBus.js';
 import { StorageService } from '../services/StorageService.js';
 import { exportData } from '../services/ExportService.js';
 import { filterCache } from '../utils/memoize.js';
+import { showLoader, hideLoader } from '../utils/loader.js';
 
 import { SalaryForm } from '../components/SalaryForm.js';
 import { HistoryTable } from '../components/HistoryTable.js';
@@ -90,11 +91,14 @@ export class SalaryTracker {
     }
 
     private async _loadData(): Promise<void> {
+        showLoader('Loading your data...');
         try {
             this.state.jobs = await this._db.loadJobs();
             this.state.entries = await this._db.loadEntries();
         } catch (err) {
             console.error('Error loading data:', err);
+        } finally {
+            hideLoader();
         }
 
         const saved = StorageService.loadAnalyticsSettings();
@@ -121,6 +125,7 @@ export class SalaryTracker {
             return;
         }
 
+        showLoader('Migrating your data...');
         try {
             if (oldJobs) {
                 const rows = oldJobs.map((j: any) => ({ name: j.name, base_rate: j.baseRate, base_hours: j.baseHours }));
@@ -148,6 +153,8 @@ export class SalaryTracker {
         } catch (err: any) {
             console.error('Migration error:', err);
             alert(`Error migrating data: ${err.message}`);
+        } finally {
+            hideLoader();
         }
     }
 
