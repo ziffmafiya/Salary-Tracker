@@ -60,6 +60,7 @@ export class AnalyticsPanel {
 
             this._renderSummary(kpis, sourceData);
             this._renderKPIs(kpis, sourceData);
+            this._updatePieChart(sourceData);
             this._renderTrends(trends);
             this._renderNotableMonths(notableMonths);
             this._renderForecast(forecastData);
@@ -140,6 +141,7 @@ export class AnalyticsPanel {
             .forEach(id => { el(id).textContent = '-'; });
         ['breakdownGrid', 'trendAnalysis', 'notableList', 'forecastGrid']
             .forEach(id => { el(id).innerHTML = ''; });
+        this._updatePieChart(null);
     }
 
     _renderSummary(kpis, sourceData) {
@@ -152,6 +154,61 @@ export class AnalyticsPanel {
             `Over ${kpis.monthsCount} months, your average monthly net income is ${kpis.avgMonthlyIncome.toFixed(0)} UAH ` +
             `from ${sourceCount} income sources. ${kpis.dominantSource} dominates with ${dominantShare}% of total income, ` +
             `contributing most to your financial stability.`;
+    }
+
+    _updatePieChart(sourceData) {
+        if (!this._pieChart) {
+            const ctx = el('sourcePieChart')?.getContext('2d');
+            if (!ctx) return;
+            this._pieChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 12, boxWidth: 12 } },
+                        tooltip: {
+                            backgroundColor: '#1F2937',
+                            titleColor: '#FFFFFF',
+                            bodyColor: '#FFFFFF',
+                            borderColor: '#4A55E1',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                label(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const val = context.parsed;
+                                    const pct = total > 0 ? (val / total * 100).toFixed(1) : 0;
+                                    return `${context.label}: ${val.toFixed(0)} UAH (${pct}%)`;
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+        }
+
+        if (!sourceData || Object.keys(sourceData).length === 0) {
+            this._pieChart.data.labels = [];
+            this._pieChart.data.datasets = [{ data: [], backgroundColor: [] }];
+            this._pieChart.update('none');
+            return;
+        }
+
+        const COLORS = ['#4CAF50', '#2196F3', '#FFC107', '#F44336', '#9C27B0', '#00BCD4', '#FF9800', '#607D8B', '#795548', '#E91E63'];
+        const entries = Object.entries(sourceData);
+        const total = entries.reduce((s, [, d]) => s + d.totalIncome, 0);
+
+        this._pieChart.data.labels = entries.map(([, d]) => d.name);
+        this._pieChart.data.datasets = [{
+            data: entries.map(([, d]) => d.totalIncome),
+            backgroundColor: entries.map((_, i) => COLORS[i % COLORS.length]),
+            borderColor: '#FFFFFF',
+            borderWidth: 2,
+        }];
+
+        this._pieChart.update('none');
     }
 
     _renderKPIs(kpis, sourceData) {

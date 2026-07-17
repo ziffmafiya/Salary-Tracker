@@ -320,6 +320,14 @@ header {
 }
 
 
+.pie-chart-wrap {
+    width: 100%;
+    max-width: 320px;
+    height: 260px;
+    margin: 15px auto 0;
+}
+#sourcePieChart { width: 100% !important; height: 100% !important; }
+
 /* ── Trends ──────────────────────────────────────────────────────────────── */
 .trends-section { margin-top: 20px; }
 .trends-section h3 { margin-bottom: 15px; color: var(--text-primary); }
