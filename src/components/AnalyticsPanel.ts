@@ -1,7 +1,7 @@
 import { el, createElement } from '../utils/dom.js';
 import { formatMonth } from '../utils/formatters.js';
 import { EventBus, Events } from '../core/EventBus.js';
-import { filterEntries, groupBySource, calculateKPIs, calculateTrends, findNotableMonths } from '../services/AnalyticsService.js';
+import { filterEntries, groupBySource, calculateKPIs, calculateTrends, findNotableMonths, calculateMomGrowth, calculateEffectiveRate } from '../services/AnalyticsService.js';
 import { forecastSources, averageConfidence } from '../services/ForecastService.js';
 import { debounce } from '../utils/debounce.js';
 import type { Job, Entry } from '../core/SupabaseClient.js';
@@ -55,6 +55,8 @@ export class AnalyticsPanel {
 
             this._renderSummary(kpis, sourceData);
             this._renderKPIs(kpis, sourceData);
+            this._renderMomGrowth(filtered, jobs);
+            this._renderEffectiveRate(filtered, jobs);
             this._updatePieChart(sourceData);
             this._renderTrends(trends);
             this._renderNotableMonths(notableMonths);
@@ -124,11 +126,40 @@ export class AnalyticsPanel {
 
     private _renderEmpty(): void {
         el('summaryText').textContent = 'No data available for analysis with current filters.';
-        ['totalIncome', 'totalHours', 'averageHourlyRate', 'totalGrossIncome', 'avgMonthlyIncome']
+        ['totalIncome', 'totalHours', 'averageHourlyRate', 'totalGrossIncome', 'avgMonthlyIncome', 'momGrowth', 'effectiveRate']
             .forEach(id => { el(id).textContent = '-'; });
         ['breakdownGrid', 'trendAnalysis', 'notableList', 'forecastGrid']
             .forEach(id => { el(id).innerHTML = ''; });
         this._updatePieChart(null);
+    }
+
+    private _renderMomGrowth(entries: Entry[], jobs: Job[]): void {
+        const { change, direction } = calculateMomGrowth(entries);
+        const el = document.getElementById('momGrowth');
+        if (!el) return;
+
+        if (change === null) {
+            el.textContent = '—';
+            el.className = 'metric-value';
+            return;
+        }
+
+        const sign = change >= 0 ? '+' : '';
+        el.textContent = `${sign}${change.toFixed(1)}%`;
+        el.className = direction === 'up' ? 'metric-value positive' : direction === 'down' ? 'metric-value negative' : 'metric-value';
+    }
+
+    private _renderEffectiveRate(entries: Entry[], jobs: Job[]): void {
+        const { rate } = calculateEffectiveRate(entries, jobs);
+        const el = document.getElementById('effectiveRate');
+        if (!el) return;
+
+        if (rate === 0) {
+            el.textContent = '—';
+            return;
+        }
+
+        el.textContent = `${rate.toFixed(2)} UAH/h`;
     }
 
     private _updatePieChart(sourceData: Record<string, any> | null): void {

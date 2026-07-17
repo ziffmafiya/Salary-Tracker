@@ -20,7 +20,7 @@ export class HistoryTable {
     private _state: HistoryState;
     private _modalController: AbortController;
     private _currentPage = 1;
-    private _pageSize = 10;
+    private _pageSize = 5;
 
     constructor(supabaseService: SupabaseService, state: HistoryState) {
         this._db = supabaseService;

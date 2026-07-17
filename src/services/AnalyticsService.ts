@@ -214,3 +214,52 @@ export function findNotableMonths(entries: Entry[], sigmaThreshold = 1.5, topN =
 
     return notable.sort((a, b) => b.change - a.change).slice(0, topN);
 }
+
+export function calculateMomGrowth(entries: Entry[]): { change: number | null; direction: string; previousMonth: string | null; currentMonth: string | null } {
+    const monthlyMap: Record<string, number> = {};
+    entries.forEach(e => {
+        monthlyMap[e.month] = (monthlyMap[e.month] || 0) + e.salary;
+    });
+
+    const months = Object.keys(monthlyMap).sort();
+    if (months.length < 2) {
+        return { change: null, direction: 'stable', previousMonth: null, currentMonth: months[0] || null };
+    }
+
+    const current = monthlyMap[months[months.length - 1]];
+    const prev = monthlyMap[months[months.length - 2]];
+
+    if (prev === 0) {
+        return { change: null, direction: 'stable', previousMonth: months[months.length - 2], currentMonth: months[months.length - 1] };
+    }
+
+    const change = ((current - prev) / prev) * 100;
+    const direction = change > 1 ? 'up' : change < -1 ? 'down' : 'stable';
+
+    return { change, direction, previousMonth: months[months.length - 2], currentMonth: months[months.length - 1] };
+}
+
+export function calculateEffectiveRate(entries: Entry[], jobs: Job[]): { rate: number; totalIncome: number; totalBaseHours: number } {
+    const jobMap = new Map(jobs.map(j => [j.id, j]));
+
+    const monthJobSet = new Set<string>();
+    let totalIncome = 0;
+
+    entries.forEach(e => {
+        totalIncome += e.salary;
+        monthJobSet.add(`${e.month}:${e.jobId}`);
+    });
+
+    let totalBaseHours = 0;
+    monthJobSet.forEach(key => {
+        const jobId = key.split(':')[1];
+        const job = jobMap.get(jobId);
+        if (job) totalBaseHours += job.baseHours;
+    });
+
+    return {
+        rate: totalBaseHours > 0 ? totalIncome / totalBaseHours : 0,
+        totalIncome,
+        totalBaseHours,
+    };
+}
