@@ -1,6 +1,6 @@
 const KEYS = {
     ANALYTICS_SETTINGS: 'salaryTrackerAnalyticsSettings',
-    CATEGORY_MAPPINGS:  'salaryTrackerCategoryMappings',
+    PAYEE_MAPPINGS:  'salaryTrackerPayeeMappings',
     LEGACY_JOBS:    'salaryTrackerJobs',
     LEGACY_ENTRIES: 'salaryTrackerEntries',
 };
@@ -42,17 +42,17 @@ export const StorageService = {
         }
     },
 
-    saveCategoryMappings(mappings: any[]): void {
+    savePayeeMappings(mappings: any[]): void {
         try {
-            localStorage.setItem(KEYS.CATEGORY_MAPPINGS, JSON.stringify(mappings));
+            localStorage.setItem(KEYS.PAYEE_MAPPINGS, JSON.stringify(mappings));
         } catch (err) {
-            console.error('StorageService: failed to save category mappings', err);
+            console.error('StorageService: failed to save payee mappings', err);
         }
     },
 
-    loadCategoryMappings(): any[] | null {
+    loadPayeeMappings(): any[] | null {
         try {
-            const raw = localStorage.getItem(KEYS.CATEGORY_MAPPINGS);
+            const raw = localStorage.getItem(KEYS.PAYEE_MAPPINGS);
             return raw ? JSON.parse(raw) : null;
         } catch {
             return null;

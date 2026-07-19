@@ -10,9 +10,9 @@ interface ImportState {
     entries: Entry[];
 }
 
-interface UnresolvedCategory {
-    categoryName: string;
+interface UnresolvedPayee {
     payee: string;
+    categoryName: string;
     totalIncome: number;
     count: number;
 }
@@ -28,7 +28,7 @@ const VALUE_SKIP = 'skip';
 export class ImportModal extends BaseModal {
     private _db: SupabaseService;
     private _state: ImportState;
-    private _unresolved: UnresolvedCategory[] = [];
+    private _unresolved: UnresolvedPayee[] = [];
     private _allTransactions: any[] = [];
     private _actions: Map<string, ImportAction> = new Map();
     private _fileParsed = false;
@@ -86,13 +86,13 @@ export class ImportModal extends BaseModal {
             }
 
             this._allTransactions = transactions;
-            this._renderCategories(groups);
+            this._renderPayees(groups);
         };
         reader.readAsText(file);
     }
 
-    private _renderCategories(groups: UnresolvedCategory[]): void {
-        const savedMappings = StorageService.loadCategoryMappings() || [];
+    private _renderPayees(groups: UnresolvedPayee[]): void {
+        const savedMappings = StorageService.loadPayeeMappings() || [];
         const jobMap = new Map(this._state.jobs.map(j => [j.id, j]));
 
         this._unresolved = [];
@@ -102,10 +102,10 @@ export class ImportModal extends BaseModal {
         container.innerHTML = '';
 
         for (const group of groups) {
-            const mapping = savedMappings.find((m: any) => m.categoryName === group.categoryName);
+            const mapping = savedMappings.find((m: any) => m.payee === group.payee);
 
             if (mapping && jobMap.has(mapping.jobId)) {
-                this._actions.set(group.categoryName, { type: 'map', jobId: mapping.jobId });
+                this._actions.set(group.payee, { type: 'map', jobId: mapping.jobId });
                 continue;
             }
 
@@ -114,10 +114,11 @@ export class ImportModal extends BaseModal {
             const row = createElement('div', { className: 'import-category-row' });
 
             const info = createElement('div', { className: 'import-category-info' });
-            info.appendChild(createElement('div', { className: 'import-category-name', textContent: group.categoryName }));
+            const payeeLabel = group.payee || group.categoryName;
+            info.appendChild(createElement('div', { className: 'import-category-name', textContent: payeeLabel }));
             info.appendChild(createElement('div', {
                 className: 'import-category-detail',
-                textContent: `${group.count} entries, total ${group.totalIncome.toFixed(2)} UAH · e.g. ${group.payee}`,
+                textContent: `${group.count} entries, total ${group.totalIncome.toFixed(2)} UAH · ${group.categoryName}`,
             }));
 
             const actionDiv = createElement('div', { className: 'import-category-action' });
@@ -141,11 +142,11 @@ export class ImportModal extends BaseModal {
             select.addEventListener('change', () => {
                 const val = select.value;
                 if (val === VALUE_SKIP) {
-                    this._actions.set(group.categoryName, { type: 'skip' });
+                    this._actions.set(group.payee, { type: 'skip' });
                 } else if (val.startsWith('job:')) {
-                    this._actions.set(group.categoryName, { type: 'map', jobId: val.slice(4) });
+                    this._actions.set(group.payee, { type: 'map', jobId: val.slice(4) });
                 } else if (val === VALUE_CREATE) {
-                    this._actions.delete(group.categoryName);
+                    this._actions.delete(group.payee);
                 }
             });
 
@@ -156,7 +157,7 @@ export class ImportModal extends BaseModal {
         }
 
         if (this._unresolved.length === 0) {
-            container.innerHTML = '<p class="text-meta">All categories already mapped. Ready to import.</p>';
+            container.innerHTML = '<p class="text-meta">All payees already mapped. Ready to import.</p>';
         }
 
         el('importStepFile').classList.add('hidden');
@@ -168,7 +169,7 @@ export class ImportModal extends BaseModal {
         if (!this._fileParsed) return;
 
         const defaultHours = parseFloat((el('importDefaultHours') as HTMLInputElement).value) || 96;
-        const savedMappings = (StorageService.loadCategoryMappings() || []) as any[];
+        const savedMappings = (StorageService.loadPayeeMappings() || []) as any[];
         const jobMap = new Map(this._state.jobs.map(j => [j.id, j]));
         const newMappings = [...savedMappings];
         const newJobs: Job[] = [];
@@ -178,21 +179,20 @@ export class ImportModal extends BaseModal {
         for (const row of categoryRows) {
             const nameEl = row.querySelector('.import-category-name');
             if (!nameEl) continue;
-            const categoryName = nameEl.textContent || '';
+            const payee = nameEl.textContent || '';
             const select = row.querySelector('select') as HTMLSelectElement;
             if (!select || select.value !== VALUE_CREATE) continue;
 
-            const jobName = categoryName;
             try {
-                const newJob = await this._db.createJob({ name: jobName, baseRate: 10395, baseHours: 192 });
+                const newJob = await this._db.createJob({ name: payee, baseRate: 10395, baseHours: 192 });
                 newJobs.push(newJob);
                 this._state.jobs.push(newJob);
                 jobMap.set(newJob.id, newJob);
-                this._actions.set(categoryName, { type: 'map', jobId: newJob.id });
-                newMappings.push({ categoryName, jobId: newJob.id });
+                this._actions.set(payee, { type: 'map', jobId: newJob.id });
+                newMappings.push({ payee, jobId: newJob.id });
             } catch (err: any) {
-                errors.push(`Failed to create job "${jobName}": ${err.message}`);
-                this._actions.set(categoryName, { type: 'skip' });
+                errors.push(`Failed to create job "${payee}": ${err.message}`);
+                this._actions.set(payee, { type: 'skip' });
             }
         }
 
@@ -200,7 +200,8 @@ export class ImportModal extends BaseModal {
         const entriesToCreate: any[] = [];
 
         for (const tx of incomeTx) {
-            const action = this._actions.get(tx.categoryName);
+            const key = tx.payee || tx.categoryName;
+            const action = this._actions.get(key);
             if (!action || action.type === 'skip') continue;
 
             const jobId = action.jobId;
@@ -228,7 +229,7 @@ export class ImportModal extends BaseModal {
         }
 
         if (newMappings.length > savedMappings.length) {
-            StorageService.saveCategoryMappings(newMappings);
+            StorageService.savePayeeMappings(newMappings);
         }
 
         this._state.entries = await this._db.loadEntries();

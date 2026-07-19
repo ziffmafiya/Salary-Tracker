@@ -38,7 +38,7 @@ export class CategoryMappingModal extends BaseModal {
     }
 
     private _getMappings(): any[] {
-        return StorageService.loadCategoryMappings() || [];
+        return StorageService.loadPayeeMappings() || [];
     }
 
     private _renderMappings(): void {
@@ -60,7 +60,7 @@ export class CategoryMappingModal extends BaseModal {
             const info = createElement('div', { className: 'mapping-info' });
             info.appendChild(createElement('div', {
                 className: 'mapping-category',
-                textContent: mapping.categoryName,
+                textContent: mapping.payee,
             }));
             info.appendChild(createElement('div', {
                 className: 'mapping-job',
@@ -72,8 +72,8 @@ export class CategoryMappingModal extends BaseModal {
                 textContent: 'Delete',
             });
             delBtn.addEventListener('click', () => {
-                const updated = mappings.filter((m: any) => m.categoryName !== mapping.categoryName);
-                StorageService.saveCategoryMappings(updated);
+                const updated = mappings.filter((m: any) => m.payee !== mapping.payee);
+                StorageService.savePayeeMappings(updated);
                 this._renderMappings();
             });
 
@@ -84,22 +84,22 @@ export class CategoryMappingModal extends BaseModal {
     }
 
     private _addMapping(): void {
-        const category = (el('newMappingCategory') as HTMLInputElement).value.trim();
+        const payee = (el('newMappingPayee') as HTMLInputElement).value.trim();
         const jobId = (el('newMappingJob') as HTMLSelectElement).value;
 
-        if (!category) { alert('Please enter a category name.'); return; }
+        if (!payee) { alert('Please enter a payee name.'); return; }
         if (!jobId) { alert('Please select a job.'); return; }
 
         const mappings = this._getMappings();
-        const existing = mappings.findIndex((m: any) => m.categoryName === category);
+        const existing = mappings.findIndex((m: any) => m.payee === payee);
         if (existing >= 0) {
             mappings[existing].jobId = jobId;
         } else {
-            mappings.push({ categoryName: category, jobId });
+            mappings.push({ payee, jobId });
         }
 
-        StorageService.saveCategoryMappings(mappings);
-        (el('newMappingCategory') as HTMLInputElement).value = '';
+        StorageService.savePayeeMappings(mappings);
+        (el('newMappingPayee') as HTMLInputElement).value = '';
         this._renderMappings();
     }
 }

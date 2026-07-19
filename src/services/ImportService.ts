@@ -15,8 +15,8 @@ export interface IncomeGroup {
     sampleDate: string;
 }
 
-export interface CategoryMapping {
-    categoryName: string;
+export interface PayeeMapping {
+    payee: string;
     jobId: string;
 }
 
@@ -49,7 +49,6 @@ export function parseCSV(text: string): CsvTransaction[] {
     const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
     if (lines.length < 2) return [];
 
-    // find header row
     const headerIdx = lines.findIndex(l => l.includes('date') && l.includes('categoryName') && l.includes('income'));
     if (headerIdx === -1) return [];
 
@@ -78,7 +77,7 @@ export function extractIncomeGroups(transactions: CsvTransaction[]): IncomeGroup
     const groups = new Map<string, IncomeGroup>();
 
     for (const tx of incomeTx) {
-        const key = tx.categoryName;
+        const key = tx.payee || tx.categoryName;
         const existing = groups.get(key);
         if (existing) {
             existing.totalIncome += tx.income;

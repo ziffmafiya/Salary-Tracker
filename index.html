@@ -217,7 +217,7 @@
             <div class="settings-container dashboard-settings">
                 <button id="jobSettingsBtn" class="settings-button">Job Settings</button>
                 <button id="importDataBtn" class="settings-button">Import from ZenMoney</button>
-                <button id="categoryMappingBtn" class="settings-button">Category Mapping</button>
+                <button id="categoryMappingBtn" class="settings-button">Payee Mapping</button>
                 <button id="exportDataBtn" class="settings-button">Export Data</button>
             </div>
         </div>
@@ -440,8 +440,8 @@
             </div>
 
             <div class="import-step hidden" id="importStepMapping">
-                <h3>Found Income Categories</h3>
-                <p class="text-meta">Map each category to a job, create a new job, or skip.</p>
+                <h3>Found Income Sources</h3>
+                <p class="text-meta">Map each payee (source) to a job, create a new job, or skip.</p>
                 <div id="importCategoriesContainer"></div>
                 <div class="form-group">
                     <label for="importDefaultHours">Default hours per entry:</label>
@@ -468,17 +468,17 @@
 <div id="categoryMappingModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>Category Mappings</h2>
+            <h2>Payee Mappings</h2>
             <span class="close-modal">&times;</span>
         </div>
         <div class="modal-body">
-            <p class="text-meta">Map ZenMoney categories to your jobs for automatic import.</p>
+            <p class="text-meta">Map ZenMoney payees (income sources) to your jobs for automatic import.</p>
             <div id="categoryMappingsList"></div>
             <div class="add-mapping-form">
                 <h3>Add Mapping</h3>
                 <div class="form-group">
-                    <label for="newMappingCategory">ZenMoney Category:</label>
-                    <input type="text" id="newMappingCategory" required>
+                    <label for="newMappingPayee">ZenMoney Payee:</label>
+                    <input type="text" id="newMappingPayee" required>
                 </div>
                 <div class="form-group">
                     <label for="newMappingJob">Job:</label>
