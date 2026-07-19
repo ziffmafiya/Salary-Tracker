@@ -434,6 +434,10 @@
             <div class="import-step" id="importStepFile">
                 <p>Select a ZenMoney CSV export file to import income entries.</p>
                 <div class="form-group">
+                    <label for="importDateFrom">Import transactions from:</label>
+                    <input type="date" id="importDateFrom">
+                </div>
+                <div class="form-group">
                     <input type="file" id="importFileInput" accept=".csv">
                 </div>
                 <button type="button" id="parseImportBtn" class="primary-btn">Parse File</button>

@@ -25,6 +25,11 @@ interface ImportAction {
 const VALUE_CREATE = '__create__';
 const VALUE_SKIP = 'skip';
 
+function todayStr(): string {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
 export class ImportModal extends BaseModal {
     private _db: SupabaseService;
     private _state: ImportState;
@@ -52,6 +57,7 @@ export class ImportModal extends BaseModal {
         this._actions = new Map();
 
         (el('importFileInput') as HTMLInputElement).value = '';
+        (el('importDateFrom') as HTMLInputElement).value = todayStr();
         el('importStepFile').classList.remove('hidden');
         el('importStepMapping').classList.add('hidden');
         el('importStepResult').classList.add('hidden');
@@ -70,6 +76,10 @@ export class ImportModal extends BaseModal {
         const file = fileInput.files?.[0];
         if (!file) { alert('Please select a CSV file.'); return; }
 
+        const dateFilter = (el('importDateFrom') as HTMLInputElement).value;
+        if (!dateFilter) { alert('Please set a start date.'); return; }
+        const cutoffMs = new Date(dateFilter + 'T00:00:00').getTime();
+
         const reader = new FileReader();
         reader.onload = () => {
             const text = reader.result as string;
@@ -79,13 +89,23 @@ export class ImportModal extends BaseModal {
                 return;
             }
 
-            const groups = extractIncomeGroups(transactions);
-            if (groups.length === 0) {
-                alert('No income entries found in the file.');
+            const filtered = transactions.filter(t => {
+                const txMs = new Date(t.date + 'T00:00:00').getTime();
+                return !isNaN(txMs) && txMs >= cutoffMs;
+            });
+
+            if (filtered.length === 0) {
+                alert(`No transactions found after ${dateFilter}. Check the date filter.`);
                 return;
             }
 
-            this._allTransactions = transactions;
+            const groups = extractIncomeGroups(filtered);
+            if (groups.length === 0) {
+                alert('No income entries found after the selected date.');
+                return;
+            }
+
+            this._allTransactions = filtered;
             this._renderPayees(groups);
         };
         reader.readAsText(file);
@@ -197,7 +217,9 @@ export class ImportModal extends BaseModal {
         }
 
         const incomeTx = this._allTransactions.filter((t: any) => t.income > 0);
+        const existingSet = new Set(this._state.entries.map(e => `${e.jobId}|${e.month}`));
         const entriesToCreate: any[] = [];
+        let duplicatesSkipped = 0;
 
         for (const tx of incomeTx) {
             const key = tx.payee || tx.categoryName;
@@ -207,16 +229,18 @@ export class ImportModal extends BaseModal {
             const jobId = action.jobId;
             if (!jobId || !jobMap.has(jobId)) continue;
 
-            entriesToCreate.push({
-                jobId,
-                month: getMonthFromDate(tx.date),
-                salary: tx.income,
-                hours: defaultHours,
-            });
+            const month = getMonthFromDate(tx.date);
+            const dedupKey = `${jobId}|${month}`;
+            if (existingSet.has(dedupKey)) {
+                duplicatesSkipped++;
+                continue;
+            }
+
+            entriesToCreate.push({ jobId, month, salary: tx.income, hours: defaultHours });
         }
 
         if (entriesToCreate.length === 0) {
-            this._showResult(0, 0, errors.length ? errors : ['No entries to import.']);
+            this._showResult(0, 0, duplicatesSkipped, errors.length ? errors : ['No new entries to import (all duplicates or skipped).']);
             return;
         }
 
@@ -236,16 +260,19 @@ export class ImportModal extends BaseModal {
         EventBus.emit(Events.ENTRIES_CHANGED);
         EventBus.emit(Events.JOBS_CHANGED);
 
-        this._showResult(entriesToCreate.length, newJobs.length, errors);
+        this._showResult(entriesToCreate.length, newJobs.length, duplicatesSkipped, errors);
     }
 
-    private _showResult(imported: number, createdJobs: number, errors: string[]): void {
+    private _showResult(imported: number, createdJobs: number, duplicatesSkipped: number, errors: string[]): void {
         el('importStepMapping').classList.add('hidden');
         el('importStepResult').classList.remove('hidden');
 
         const summary = el('importResultSummary');
         const parts: string[] = [];
         parts.push(`<p><strong>${imported}</strong> entries imported successfully.</p>`);
+        if (duplicatesSkipped > 0) {
+            parts.push(`<p>${duplicatesSkipped} duplicate(s) skipped.</p>`);
+        }
         if (createdJobs > 0) {
             parts.push(`<p><strong>${createdJobs}</strong> new job(s) created.</p>`);
         }
