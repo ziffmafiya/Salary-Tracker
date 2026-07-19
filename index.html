@@ -216,6 +216,8 @@
             <!-- Settings actions -->
             <div class="settings-container dashboard-settings">
                 <button id="jobSettingsBtn" class="settings-button">Job Settings</button>
+                <button id="importDataBtn" class="settings-button">Import from ZenMoney</button>
+                <button id="categoryMappingBtn" class="settings-button">Category Mapping</button>
                 <button id="exportDataBtn" class="settings-button">Export Data</button>
             </div>
         </div>
@@ -416,6 +418,75 @@
             <div class="modal-actions">
                 <button type="button" id="resetAnalyticsSettings" class="secondary-btn">Reset to Default</button>
                 <button type="button" id="applyAnalyticsSettings" class="primary-btn">Apply Settings</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div id="importModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Import from ZenMoney</h2>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="import-step" id="importStepFile">
+                <p>Select a ZenMoney CSV export file to import income entries.</p>
+                <div class="form-group">
+                    <input type="file" id="importFileInput" accept=".csv">
+                </div>
+                <button type="button" id="parseImportBtn" class="primary-btn">Parse File</button>
+            </div>
+
+            <div class="import-step hidden" id="importStepMapping">
+                <h3>Found Income Categories</h3>
+                <p class="text-meta">Map each category to a job, create a new job, or skip.</p>
+                <div id="importCategoriesContainer"></div>
+                <div class="form-group">
+                    <label for="importDefaultHours">Default hours per entry:</label>
+                    <input type="number" id="importDefaultHours" step="0.1" value="96">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="cancelImportBtn" class="secondary-btn">Cancel</button>
+                    <button type="button" id="applyImportBtn" class="primary-btn">Import</button>
+                </div>
+            </div>
+
+            <div class="import-step hidden" id="importStepResult">
+                <h3>Import Complete</h3>
+                <div id="importResultSummary"></div>
+                <div class="modal-actions">
+                    <button type="button" id="closeImportResultBtn" class="primary-btn">Done</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Mapping Modal -->
+<div id="categoryMappingModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Category Mappings</h2>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p class="text-meta">Map ZenMoney categories to your jobs for automatic import.</p>
+            <div id="categoryMappingsList"></div>
+            <div class="add-mapping-form">
+                <h3>Add Mapping</h3>
+                <div class="form-group">
+                    <label for="newMappingCategory">ZenMoney Category:</label>
+                    <input type="text" id="newMappingCategory" required>
+                </div>
+                <div class="form-group">
+                    <label for="newMappingJob">Job:</label>
+                    <select id="newMappingJob"></select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="addMappingBtn" class="primary-btn">Add Mapping</button>
+                </div>
             </div>
         </div>
     </div>

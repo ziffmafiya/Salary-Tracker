@@ -15,6 +15,8 @@ import { Tooltip } from '../components/Tooltip.js';
 
 import { JobSettingsModal } from '../components/modals/JobSettingsModal.js';
 import { AnalyticsModal } from '../components/modals/AnalyticsModal.js';
+import { ImportModal } from '../components/modals/ImportModal.js';
+import { CategoryMappingModal } from '../components/modals/CategoryMappingModal.js';
 
 export interface AppState {
     jobs: Job[];
@@ -45,6 +47,8 @@ export class SalaryTracker {
     private _chart!: ChartComponent;
     private _jobSettingsModal!: JobSettingsModal;
     private _analyticsModal!: AnalyticsModal;
+    private _importModal!: ImportModal;
+    private _categoryMappingModal!: CategoryMappingModal;
 
     constructor() {
         if (typeof SUPABASE_URL === 'undefined' || !SUPABASE_URL ||
@@ -173,9 +177,15 @@ export class SalaryTracker {
 
         this._jobSettingsModal = new JobSettingsModal(this._db, this.state);
         this._analyticsModal = new AnalyticsModal(this.state);
+        this._importModal = new ImportModal(this._db, this.state);
+        this._categoryMappingModal = new CategoryMappingModal(this.state);
 
         document.getElementById('exportDataBtn')!.addEventListener('click', () => {
             exportData(this.state.jobs, this.state.entries);
+        });
+
+        document.getElementById('importDataBtn')!.addEventListener('click', () => {
+            this._importModal.open();
         });
 
         EventBus.on(Events.ANALYTICS_SETTINGS_CHANGED, () => {
