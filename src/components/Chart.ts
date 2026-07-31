@@ -233,32 +233,46 @@ export class ChartComponent {
             maintainAspectRatio: false,
             layout: {
                 padding: {
-                    top: isMobile ? 5 : 10,
-                    bottom: isMobile ? 5 : 10,
-                    left: 0,
-                    right: isMobile ? 5 : 10,
+                    top: isMobile ? 5 : 15,
+                    bottom: isMobile ? 5 : 15,
+                    left: isMobile ? 0 : 15,
+                    right: isMobile ? 5 : 15,
                 }
             },
             scales: {
                 x: {
-                    title: { display: !isMobile, text: 'Month' },
-                    grid:  { color: '#f0ecf2' },
+                    title: {
+                        display: !isMobile,
+                        text: 'Month',
+                        color: '#64748B',
+                        font: { size: 11, weight: '600' },
+                        padding: { top: 10 }
+                    },
+                    grid:  { color: 'rgba(148, 163, 184, 0.12)' },
                     ticks: {
                         autoSkip: true,
                         maxTicksLimit: isMobile ? 6 : 12,
                         maxRotation: 45,
                         minRotation: 0,
                         padding: isMobile ? 4 : 8,
-                        font: { size: isMobile ? 10 : 12 },
+                        color: '#64748B',
+                        font: { size: isMobile ? 10 : 11 },
                     },
                 },
                 y: {
                     beginAtZero: true,
-                    title: { display: true, text: 'Amount (UAH)', color: '#0D0A0B' },
-                    grid:  { color: '#f0ecf2' },
+                    title: {
+                        display: true,
+                        text: 'Amount (UAH)',
+                        color: '#64748B',
+                        font: { size: 11, weight: '600' },
+                        padding: { bottom: 12 }
+                    },
+                    grid:  { color: 'rgba(148, 163, 184, 0.12)' },
                     ticks: {
-                        font: { size: isMobile ? 10 : 12 },
-                        padding: isMobile ? 4 : 8,
+                        font: { size: isMobile ? 10 : 11 },
+                        color: '#64748B',
+                        padding: isMobile ? 6 : 12,
                     },
                 },
             },
@@ -267,20 +281,21 @@ export class ChartComponent {
                     display:  true,
                     position: 'top',
                     labels:   {
-                        color: '#0D0A0B',
+                        color: '#475569',
                         padding: isMobile ? 8 : 16,
-                        boxWidth: isMobile ? 12 : 30,
-                        font: { size: isMobile ? 11 : 12 },
+                        boxWidth: isMobile ? 12 : 24,
+                        font: { size: isMobile ? 11 : 12, weight: '500' },
                     },
                 },
                 tooltip: {
                     enabled:         true,
-                    backgroundColor: '#1F2937',
-                    titleColor:      '#FFFFFF',
-                    bodyColor:       '#FFFFFF',
-                    borderColor:     '#4A55E1',
+                    backgroundColor: '#1E293B',
+                    titleColor:      '#F8FAFC',
+                    bodyColor:       '#F8FAFC',
+                    borderColor:     '#6366F1',
                     borderWidth:     1,
-                    padding:         10,
+                    padding:         12,
+                    cornerRadius:    10,
                     callbacks: {
                         label(context: any) {
                             const chartType = context.chart.options._chartType;
