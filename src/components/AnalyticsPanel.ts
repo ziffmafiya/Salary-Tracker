@@ -261,24 +261,34 @@ export class AnalyticsPanel {
         const container = el('trendAnalysis');
         container.innerHTML = '';
 
+        const svgUp = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>`;
+        const svgDown = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>`;
+        const svgStable = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>`;
+
         Object.values(trends).forEach((trend: any) => {
-            const icon = trend.direction === 'growing' ? '📈' :
-                         trend.direction === 'declining' ? '📉' : '➡️';
-            const trendText = trend.direction === 'stable'
+            const dir = trend.direction;
+            const icon = dir === 'growing' ? svgUp : dir === 'declining' ? svgDown : svgStable;
+            const trendLabel = dir === 'stable'
                 ? 'Stable'
-                : `${trend.direction === 'growing' ? 'Growing' : 'Declining'} (${trend.change.toFixed(1)}%)`;
+                : `${dir === 'growing' ? 'Growing' : 'Declining'} (${trend.change > 0 ? '+' : ''}${trend.change.toFixed(1)}%)`;
 
             const item = createElement('div', {
                 className: 'trend-item-unified',
                 innerHTML: `
                     <div class="trend-source-name">${trend.name}</div>
-                    <div class="trend-direction-unified">
-                        <span class="trend-icon-unified">${icon}</span>
-                        <span class="trend-text-unified">${trendText}</span>
+                    <div class="trend-badge ${dir}">
+                        ${icon}
+                        <span>${trendLabel}</span>
                     </div>
-                    <div class="trend-stats-unified">
-                        Avg: ${trend.avgIncome.toFixed(0)} UAH/month<br>
-                        Volatility: ${trend.volatility.toFixed(0)} UAH
+                    <div class="trend-stats-grid">
+                        <div class="trend-stat-row">
+                            <span class="trend-stat-label">Avg:</span>
+                            <span class="trend-stat-val">${trend.avgIncome.toFixed(0)} UAH/month</span>
+                        </div>
+                        <div class="trend-stat-row">
+                            <span class="trend-stat-label">Volatility:</span>
+                            <span class="trend-stat-val">${trend.volatility.toFixed(0)} UAH</span>
+                        </div>
                     </div>
                 `,
             });
@@ -292,19 +302,22 @@ export class AnalyticsPanel {
 
         if (notableMonths.length === 0) {
             container.appendChild(createElement('div', {
-                className: 'notable-item-unified',
+                className: 'notable-item-unified empty',
                 innerHTML: '<div class="notable-month-unified">No significant variations detected</div>',
             }));
             return;
         }
 
         notableMonths.forEach((notable: any) => {
+            const isSpike = notable.type === 'spike';
+            const badgeClass = isSpike ? 'spike' : 'drop';
+            const sign = notable.change > 0 ? '+' : '';
             const item = createElement('div', {
-                className: 'notable-item-unified',
+                className: `notable-item-unified ${badgeClass}`,
                 innerHTML: `
-                    <div>
-                        <div class="notable-month-unified">${formatMonth(notable.month)}</div>
-                        <div class="notable-change-unified">${notable.change.toFixed(1)}% ${notable.type}</div>
+                    <div class="notable-header-wrap">
+                        <span class="notable-month-unified">${formatMonth(notable.month)}</span>
+                        <span class="notable-badge ${badgeClass}">${sign}${notable.change.toFixed(1)}% ${notable.type}</span>
                     </div>
                     <div class="notable-reason-unified">${notable.reason}</div>
                 `,
@@ -321,7 +334,7 @@ export class AnalyticsPanel {
 
         if (!forecasts || Object.keys(forecasts).length === 0) {
             grid.appendChild(createElement('div', {
-                className: 'forecast-item-unified',
+                className: 'forecast-item-unified empty',
                 innerHTML: '<div class="forecast-month-unified">No data available for forecast</div>',
             }));
             return;
@@ -338,36 +351,42 @@ export class AnalyticsPanel {
             const totalLower = monthForecasts.reduce((s: number, mf: any) => s + (mf ? mf.lower  : 0), 0);
             const totalUpper = monthForecasts.reduce((s: number, mf: any) => s + (mf ? mf.upper  : 0), 0);
             const avgConf    = averageConfidence(sourcesArray, month.key);
-            const trendIcon  = this._getTrendIcon(sourcesArray, month.key, monthIndex);
+            const trendSvg   = this._getForecastSvg(sourcesArray, month.key, monthIndex);
 
             const breakdownHtml = sourcesArray.map(source => {
                 const mf = source.forecasts.find((f: any) => f.month === month.key);
                 if (!mf) return '';
-                return `<div class="forecast-source-unified">
-                    <span>${source.name}</span>
-                    <span>${mf.amount.toFixed(0)} UAH</span>
+                return `<div class="forecast-source-row">
+                    <span class="forecast-source-name">${source.name}</span>
+                    <span class="forecast-source-val">${mf.amount.toFixed(0)} UAH</span>
                 </div>`;
             }).join('');
 
             const item = createElement('div', {
-                className: 'forecast-item-unified overall',
+                className: 'forecast-item-unified',
                 innerHTML: `
-                    <div class="forecast-trend-unified">${trendIcon}</div>
-                    <div class="forecast-month-unified">${month.name}</div>
+                    <div class="forecast-top-bar">
+                        <div class="forecast-month-unified">${month.name}</div>
+                        <div class="forecast-trend-icon">${trendSvg}</div>
+                    </div>
                     <div class="forecast-amount-unified">${total.toFixed(0)} UAH</div>
                     <div class="forecast-range-unified">${totalLower.toFixed(0)} – ${totalUpper.toFixed(0)} UAH</div>
-                    <div class="forecast-confidence-unified">
-                        <span class="confidence-indicator-unified ${avgConf}"></span>
+                    <div class="forecast-confidence-pill ${avgConf}">
+                        <span class="confidence-dot ${avgConf}"></span>
                         Confidence: ${avgConf}
                     </div>
-                    <div class="forecast-breakdown-unified">${breakdownHtml}</div>
+                    <div class="forecast-breakdown-list">${breakdownHtml}</div>
                 `,
             });
             grid.appendChild(item);
         });
     }
 
-    private _getTrendIcon(sourcesArray: any[], monthKey: string, monthIndex = 0): string {
+    private _getForecastSvg(sourcesArray: any[], monthKey: string, monthIndex = 0): string {
+        const svgUp = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>`;
+        const svgDown = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>`;
+        const svgStable = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>`;
+
         const thisTotal = sourcesArray.reduce((s: number, source: any) => {
             const mf = source.forecasts.find((f: any) => f.month === monthKey);
             return s + (mf ? mf.amount : 0);
@@ -380,7 +399,7 @@ export class AnalyticsPanel {
                     prevTotal += source.forecasts[0].amount;
                 }
             });
-            if (Math.abs(thisTotal - prevTotal) < 1) return '➡️';
+            if (Math.abs(thisTotal - prevTotal) < 1) return svgStable;
         } else {
             sourcesArray.forEach(source => {
                 const prev = source.forecasts[monthIndex - 1];
@@ -389,8 +408,8 @@ export class AnalyticsPanel {
         }
 
         const delta = thisTotal - prevTotal;
-        if (delta > prevTotal * 0.02) return '📈';
-        if (delta < -prevTotal * 0.02) return '📉';
-        return '➡️';
+        if (delta > prevTotal * 0.02) return svgUp;
+        if (delta < -prevTotal * 0.02) return svgDown;
+        return svgStable;
     }
 }
