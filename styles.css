@@ -186,26 +186,33 @@ h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 12px; }
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ── Dashboard Grid Layout ─────────────────────────────────────────────── */
+/* ── Dashboard Layout ─────────────────────────────────────────────────── */
 .dashboard-layout {
-    display:               grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
-    grid-template-areas:
-        "overview overview"
-        "chart    form"
-        "chart    stats"
-        "history  settings";
-    gap:          24px;
-    align-items:  start;
+    display:        flex;
+    flex-direction: column;
+    gap:            24px;
 }
 
-.dashboard-layout > * { min-width: 0; }
-.dashboard-overview  { grid-area: overview; }
-.dashboard-form      { grid-area: form;     }
-.dashboard-stats     { grid-area: stats;    }
-.dashboard-chart     { grid-area: chart;    }
-.dashboard-history   { grid-area: history;  }
-.dashboard-settings  { grid-area: settings; }
+.dashboard-body {
+    display:               grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap:                   24px;
+    align-items:           start;
+}
+
+.dashboard-main-col {
+    display:        flex;
+    flex-direction: column;
+    gap:            24px;
+    min-width:      0;
+}
+
+.dashboard-sidebar-col {
+    display:        flex;
+    flex-direction: column;
+    gap:            24px;
+    min-width:      0;
+}
 
 /* ── Section Cards (Glassmorphism + Subtle Hover) ────────────────────────── */
 .analytics-section-unified,
@@ -923,9 +930,11 @@ footer {
     .brand-badge { font-size: 9px; padding: 2px 6px; }
 
     .dashboard-layout {
+        gap: 16px;
+    }
+
+    .dashboard-body {
         grid-template-columns: 1fr;
-        grid-template-areas:
-            "overview" "form" "stats" "chart" "history" "settings";
         gap: 16px;
     }
 

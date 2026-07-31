@@ -51,7 +51,7 @@
             </div>
         </header>
         <div class="dashboard-layout">
-            <!-- Overview -->
+            <!-- Overview (Full-width Top Banner) -->
             <section class="analytics-section-unified dashboard-overview">
                 <div class="section-header">
                     <h2>Overview</h2>
@@ -123,110 +123,119 @@
                 </div>
             </section>
 
-            <!-- Add Salary -->
-            <section class="data-section dashboard-form">
-                <div class="add-salary-section">
-                    <h2>Add Salary Data</h2>
-                    <form id="salaryForm">
-                        <div class="form-group">
-                            <label for="jobSelect">Job:</label>
-                            <select id="jobSelect" required></select>
+            <!-- Dashboard Body: 2 Columns -->
+            <div class="dashboard-body">
+                <!-- Left Main Column (Chart + History) -->
+                <div class="dashboard-main-col">
+                    <!-- Chart -->
+                    <section class="chart-section dashboard-chart">
+                        <div class="section-header">
+                            <div class="chart-title-container">
+                                <h2>Monthly Income</h2>
+                            </div>
+                            <div class="settings-gear" id="monthlyIncomeSettingsBtn">
+                                <div id="gearAnimationChart"></div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="monthYearInput">Month and Year:</label>
-                            <input type="month" id="monthYearInput" required>
+                        <div class="chart-canvas-wrap">
+                            <canvas id="salaryChart"></canvas>
                         </div>
-                        <div class="form-group">
-                            <label for="salary">Salary (UAH):</label>
-                            <input type="number" id="salary" step="0.01" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="hours">Hours Worked:</label>
-                            <input type="number" id="hours" step="0.1" required value="96">
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit">Add Entry</button>
-                        </div>
-                    </form>
-                </div>
-            </section>
+                    </section>
 
-            <!-- Statistics -->
-            <section class="statistics-section dashboard-stats">
-                <div class="statistics-header">
-                    <h2>Statistics</h2>
-                    <div class="job-selector">
-                        <label for="viewJobSelect">View Job Data:</label>
-                        <select id="viewJobSelect"></select>
-                    </div>
+                    <!-- History -->
+                    <section class="history-section dashboard-history">
+                        <h2>Salary History</h2>
+                        <div class="table-container">
+                            <table id="salaryHistoryTable">
+                                <thead>
+                                    <tr>
+                                        <th>Month</th>
+                                        <th>Job</th>
+                                        <th>Salary (UAH)</th>
+                                        <th>Hours</th>
+                                        <th>Hourly Rate</th>
+                                        <th>Salary Diff</th>
+                                        <th>Rate Diff</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Salary history will be populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <button id="clearAllData" class="danger-button">Clear All Data</button>
+                    </section>
                 </div>
-                <div class="current-entry">
-                    <h3 id="statisticsTitle">Last Entry</h3>
-                    <div class="stat-item">
-                        <span class="label">Salary:</span>
-                        <span id="currentSalary" class="tooltip-trigger">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="label">Hours:</span>
-                        <span id="currentHours">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="label">Hourly Rate:</span>
-                        <span id="currentHourlyRate" class="tooltip-trigger">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="label">Difference:</span>
-                        <span id="currentDifference" class="tooltip-trigger">-</span>
-                    </div>
-                </div>
-            </section>
 
-            <!-- Chart -->
-            <section class="chart-section dashboard-chart">
-                <div class="section-header">
-                    <div class="chart-title-container">
-                        <h2>Monthly Income</h2>
-                    </div>
-                    <div class="settings-gear" id="monthlyIncomeSettingsBtn">
-                        <div id="gearAnimationChart"></div>
-                    </div>
-                </div>
-                <div class="chart-canvas-wrap">
-                    <canvas id="salaryChart"></canvas>
-                </div>
-            </section>
+                <!-- Right Sidebar Column (Add Salary + Stats + Settings) -->
+                <div class="dashboard-sidebar-col">
+                    <!-- Add Salary -->
+                    <section class="data-section dashboard-form">
+                        <div class="add-salary-section">
+                            <h2>Add Salary Data</h2>
+                            <form id="salaryForm">
+                                <div class="form-group">
+                                    <label for="jobSelect">Job:</label>
+                                    <select id="jobSelect" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="monthYearInput">Month and Year:</label>
+                                    <input type="month" id="monthYearInput" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="salary">Salary (UAH):</label>
+                                    <input type="number" id="salary" step="0.01" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="hours">Hours Worked:</label>
+                                    <input type="number" id="hours" step="0.1" required value="96">
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit">Add Entry</button>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
 
-            <!-- History -->
-            <section class="history-section dashboard-history">
-                <h2>Salary History</h2>
-                <div class="table-container">
-                    <table id="salaryHistoryTable">
-                        <thead>
-                            <tr>
-                                <th>Month</th>
-                                <th>Job</th>
-                                <th>Salary (UAH)</th>
-                                <th>Hours</th>
-                                <th>Hourly Rate</th>
-                                <th>Salary Diff</th>
-                                <th>Rate Diff</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Salary history will be populated dynamically -->
-                        </tbody>
-                    </table>
-                </div>
-                <button id="clearAllData" class="danger-button">Clear All Data</button>
-            </section>
+                    <!-- Statistics -->
+                    <section class="statistics-section dashboard-stats">
+                        <div class="statistics-header">
+                            <h2>Statistics</h2>
+                            <div class="job-selector">
+                                <label for="viewJobSelect">View Job Data:</label>
+                                <select id="viewJobSelect"></select>
+                            </div>
+                        </div>
+                        <div class="current-entry">
+                            <h3 id="statisticsTitle">Last Entry</h3>
+                            <div class="stat-item">
+                                <span class="label">Salary:</span>
+                                <span id="currentSalary" class="tooltip-trigger">-</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="label">Hours:</span>
+                                <span id="currentHours">-</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="label">Hourly Rate:</span>
+                                <span id="currentHourlyRate" class="tooltip-trigger">-</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="label">Difference:</span>
+                                <span id="currentDifference" class="tooltip-trigger">-</span>
+                            </div>
+                        </div>
+                    </section>
 
-            <!-- Settings actions -->
-            <div class="settings-container dashboard-settings">
-                <button id="jobSettingsBtn" class="settings-button">Job Settings</button>
-                <button id="importDataBtn" class="settings-button">Import from ZenMoney</button>
-                <button id="categoryMappingBtn" class="settings-button">Payee Mapping</button>
-                <button id="exportDataBtn" class="settings-button">Export Data</button>
+                    <!-- Settings Actions -->
+                    <div class="settings-container dashboard-settings">
+                        <button id="jobSettingsBtn" class="settings-button">Job Settings</button>
+                        <button id="importDataBtn" class="settings-button">Import from ZenMoney</button>
+                        <button id="categoryMappingBtn" class="settings-button">Payee Mapping</button>
+                        <button id="exportDataBtn" class="settings-button">Export Data</button>
+                    </div>
+                </div>
             </div>
         </div>
 
