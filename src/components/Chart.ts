@@ -71,7 +71,7 @@ export class ChartComponent {
 
         const labels = allMonths.map(month => {
             const [y, m] = month.split('-');
-            return new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            return new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
         });
 
         const chartType = monthlyIncomeSettings.chartType;
@@ -81,30 +81,42 @@ export class ChartComponent {
         const yTitle   = chartType === 'salary' ? 'Total Salary (UAH)' : 'Average Hourly Rate (UAH/hour)';
         const dataLabel = chartType === 'salary' ? 'Monthly Income' : 'Hourly Rate';
 
+        const ctx = this._chart.ctx;
+        let gradientBg: any = 'rgba(16, 185, 129, 0.12)';
+        if (ctx) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.28)');
+            gradient.addColorStop(1, 'rgba(16, 185, 129, 0.00)');
+            gradientBg = gradient;
+        }
+
         datasets.push({
             label:              dataLabel,
             data:               mainData,
-            borderColor:        COLORS[0],
-            backgroundColor:    'transparent',
-            tension:            0.4,
-            fill:               false,
-            pointRadius:        6,
+            borderColor:        '#10B981',
+            backgroundColor:    gradientBg,
+            tension:            0.35,
+            fill:               true,
+            borderWidth:        3,
+            pointRadius:        5,
             pointHoverRadius:   8,
-            pointBackgroundColor: COLORS[0],
+            pointBackgroundColor: '#10B981',
+            pointBorderColor:     '#FFFFFF',
+            pointBorderWidth:     2,
         });
 
         const maData = movingAverage(mainData, 3);
         datasets.push({
             label:           'Moving Average (3-month)',
             data:            maData,
-            borderColor:     '#FF9800',
+            borderColor:     '#F59E0B',
             backgroundColor: 'transparent',
-            borderWidth:     2,
-            tension:         0.4,
+            borderWidth:     2.5,
+            tension:         0.35,
             fill:            false,
             pointRadius:     0,
             pointHoverRadius: 0,
-            borderDash:      [5, 5],
+            borderDash:      [6, 6],
         });
 
         const baseData = this._buildBaseData(allMonths, filtered, jobs, chartType);
@@ -112,14 +124,15 @@ export class ChartComponent {
         datasets.push({
             label:           baseLabel,
             data:            baseData,
-            borderColor:     '#7e8495',
+            borderColor:     '#64748B',
             backgroundColor: 'transparent',
-            borderDash:      [5, 5],
-            tension:         0.4,
+            borderDash:      [4, 4],
+            borderWidth:     2,
+            tension:         0.35,
             fill:            false,
-            pointRadius:     4,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#0D0A0B',
+            pointRadius:     3,
+            pointHoverRadius: 5,
+            pointBackgroundColor: '#64748B',
         });
 
         this._chart.data.labels = labels;
@@ -128,10 +141,21 @@ export class ChartComponent {
             this._chart.data.datasets.forEach((ds: any, i: number) => {
                 ds.data  = datasets[i].data;
                 ds.label = datasets[i].label;
+                ds.backgroundColor = datasets[i].backgroundColor;
+                ds.borderColor = datasets[i].borderColor;
             });
         } else {
             this._chart.data.datasets = datasets;
         }
+
+        const isMobile = typeof window !== 'undefined' && window.innerWidth <= 600;
+        this._chart.options.scales.x.ticks.maxTicksLimit = isMobile ? 6 : 12;
+        this._chart.options.scales.x.ticks.font.size = isMobile ? 10 : 12;
+        this._chart.options.scales.x.title.display = !isMobile;
+        this._chart.options.scales.y.ticks.font.size = isMobile ? 10 : 12;
+        this._chart.options.plugins.legend.labels.padding = isMobile ? 8 : 16;
+        this._chart.options.plugins.legend.labels.boxWidth = isMobile ? 12 : 30;
+        this._chart.options.plugins.legend.labels.font.size = isMobile ? 11 : 12;
 
         this._chart.options.scales.y.title.text = yTitle;
         this._chart.options._chartType = chartType;
@@ -203,26 +227,51 @@ export class ChartComponent {
     }
 
     private _buildOptions(): any {
+        const isMobile = typeof window !== 'undefined' && window.innerWidth <= 600;
         return {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: isMobile ? 5 : 10,
+                    bottom: isMobile ? 5 : 10,
+                    left: 0,
+                    right: isMobile ? 5 : 10,
+                }
+            },
             scales: {
                 x: {
-                    title: { display: true, text: 'Month' },
+                    title: { display: !isMobile, text: 'Month' },
                     grid:  { color: '#f0ecf2' },
-                    ticks: { autoSkip: true, maxRotation: 45, minRotation: 0, padding: 10 },
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: isMobile ? 6 : 12,
+                        maxRotation: 45,
+                        minRotation: 0,
+                        padding: isMobile ? 4 : 8,
+                        font: { size: isMobile ? 10 : 12 },
+                    },
                 },
                 y: {
                     beginAtZero: true,
                     title: { display: true, text: 'Amount (UAH)', color: '#0D0A0B' },
                     grid:  { color: '#f0ecf2' },
+                    ticks: {
+                        font: { size: isMobile ? 10 : 12 },
+                        padding: isMobile ? 4 : 8,
+                    },
                 },
             },
             plugins: {
                 legend: {
                     display:  true,
                     position: 'top',
-                    labels:   { color: '#0D0A0B', padding: 20 },
+                    labels:   {
+                        color: '#0D0A0B',
+                        padding: isMobile ? 8 : 16,
+                        boxWidth: isMobile ? 12 : 30,
+                        font: { size: isMobile ? 11 : 12 },
+                    },
                 },
                 tooltip: {
                     enabled:         true,

@@ -202,14 +202,14 @@ export class AnalyticsPanel {
             return;
         }
 
-        const COLORS = ['#4CAF50', '#2196F3', '#FFC107', '#F44336', '#9C27B0', '#00BCD4', '#FF9800', '#607D8B', '#795548', '#E91E63'];
+        const COLORS = ['#10B981', '#6366F1', '#F59E0B', '#EC4899', '#3B82F6', '#8B5CF6', '#14B8A6', '#F97316'];
         const entries = Object.entries(sourceData);
 
         this._pieChart.data.labels = entries.map(([, d]) => d.name);
         this._pieChart.data.datasets = [{
             data: entries.map(([, d]) => d.totalIncome),
             backgroundColor: entries.map((_, i) => COLORS[i % COLORS.length]),
-            borderColor: '#FFFFFF',
+            borderColor: 'rgba(255, 255, 255, 0.8)',
             borderWidth: 2,
         }];
 
